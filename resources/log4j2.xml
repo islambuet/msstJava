@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="AclusterllcJava" packages="aclusterllc.aclusterllcJava">
+
+  <Appenders>
+    <RollingFile name="CommonLogger" fileName="logs\\CommonLogger.log"
+                 filePattern="logs\\$${date:yyyy-MM}\\CommonLogger-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100"/>
+    </RollingFile>
+    <RollingFile name="ApeClient" fileName="logs\\ApeClient.log"
+                 filePattern="logs\\$${date:yyyy-MM}\\ApeClient-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100"/>
+    </RollingFile>
+    <RollingFile name="HmiServer" fileName="logs\\HmiServer.log"
+                 filePattern="logs\\$${date:yyyy-MM}\\HmiServer-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100"/>
+    </RollingFile>
+
+    <RollingFile name="DatabaseHelper" fileName="logs\\DatabaseHelper.log"
+                 filePattern="logs\\$${date:yyyy-MM}\\DatabaseHelper-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100"/>
+    </RollingFile>
+  </Appenders>
+  <Loggers>
+    <Logger name="aclusterllc.msst.ApeClient" level="info" additivity="false">
+      <AppenderRef ref="ApeClient"/>
+    </Logger>
+    <Logger name="aclusterllc.msst.HmiServer" level="info" additivity="false">
+      <AppenderRef ref="HmiServer"/>
+    </Logger>
+    <Logger name="aclusterllc.msst.DatabaseHelper" level="info" additivity="false">
+      <AppenderRef ref="DatabaseHelper"/>
+    </Logger>
+    <Root level="info">
+      <AppenderRef ref="CommonLogger"/>
+    </Root>
+  </Loggers>
+</Configuration>
