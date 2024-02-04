@@ -13,23 +13,9 @@
       </Policies>
       <DefaultRolloverStrategy max="100"/>
     </RollingFile>
-
-    <RollingFile name="HelperDatabase" fileName="logs\\HelperDatabase.log"
-                 filePattern="logs\\$${date:yyyy-MM}\\HelperDatabase-%d{MM-dd-yyyy}-%i.log.gz">
-      <PatternLayout>
-        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
-      </PatternLayout>
-      <Policies>
-        <TimeBasedTriggeringPolicy />
-        <SizeBasedTriggeringPolicy size="10 MB"/>
-      </Policies>
-      <DefaultRolloverStrategy max="100"/>
-    </RollingFile>
   </Appenders>
   <Loggers>
-    <Logger name="aclusterllc.msst.HelperDatabase" level="info" additivity="false">
-      <AppenderRef ref="HelperDatabase"/>
-    </Logger>
+    <Logger name="com.zaxxer" level="error"/>
     <Root level="info">
       <AppenderRef ref="CommonLogger"/>
     </Root>

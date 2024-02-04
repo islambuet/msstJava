@@ -9,7 +9,6 @@ import java.sql.*;
 import java.util.Arrays;
 
 public class HelperDatabase {
-    static Logger logger = LoggerFactory.getLogger(HelperDatabase.class);
     public static void runMultipleQuery(Connection connection,String query) throws SQLException {
         if(query.length()>0){
             connection.setAutoCommit(false);
@@ -32,91 +31,53 @@ public class HelperDatabase {
         }
         return num_row;
     }
-    public static JSONArray getSelectQueryResults(Connection connection,String query){
+    public static JSONArray getSelectQueryResults(Connection connection,String query) throws SQLException {
         JSONArray resultsJsonArray = new JSONArray();
-        try {
-            Statement stmt = connection.createStatement();
+        Statement stmt = connection.createStatement();
 
-            ResultSet rs = stmt.executeQuery(query);
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            int numColumns = rsMetaData.getColumnCount();
-            while (rs.next())
-            {
-                JSONObject item=new JSONObject();
-                for (int i=1; i<=numColumns; i++) {
-                    String column_name = rsMetaData.getColumnName(i);
-                    item.put(column_name,rs.getString(column_name));
-                }
-                resultsJsonArray.put(item);
+        ResultSet rs = stmt.executeQuery(query);
+        ResultSetMetaData rsMetaData = rs.getMetaData();
+        int numColumns = rsMetaData.getColumnCount();
+        while (rs.next())
+        {
+            JSONObject item=new JSONObject();
+            for (int i=1; i<=numColumns; i++) {
+                String column_name = rsMetaData.getColumnName(i);
+                item.put(column_name,rs.getString(column_name));
             }
-            rs.close();
-            stmt.close();
+            resultsJsonArray.put(item);
         }
-        catch (Exception ex) {
-            logger.error(HelperCommon.getStackTraceString(ex));
-        }
+        rs.close();
+        stmt.close();
         return resultsJsonArray;
     }
-    public static JSONObject getSelectQueryResults(Connection connection,String query,String[] keyColumns){
+    public static JSONObject getSelectQueryResults(Connection connection,String query,String[] keyColumns) throws SQLException {
         JSONObject resultJsonObject = new JSONObject();
-        try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            int numColumns = rsMetaData.getColumnCount();
-            while (rs.next())
-            {
-                JSONObject item=new JSONObject();
-                for (int i=1; i<=numColumns; i++) {
-                    String column_name = rsMetaData.getColumnName(i);
-                    item.put(column_name,rs.getString(column_name));
-                }
-                String key="";
-                for(int i=0;i<keyColumns.length;i++)
-                {
-                    if(i==0){
-                        key=rs.getString(keyColumns[i]);
-                    }
-                    else{
-                        key+=("_"+rs.getString(keyColumns[i]));
-                    }
-                }
-                resultJsonObject.put(key,item);
+        Statement stmt = connection.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+        ResultSetMetaData rsMetaData = rs.getMetaData();
+        int numColumns = rsMetaData.getColumnCount();
+        while (rs.next())
+        {
+            JSONObject item=new JSONObject();
+            for (int i=1; i<=numColumns; i++) {
+                String column_name = rsMetaData.getColumnName(i);
+                item.put(column_name,rs.getString(column_name));
             }
-            rs.close();
-            stmt.close();
+            String key="";
+            for(int i=0;i<keyColumns.length;i++)
+            {
+                if(i==0){
+                    key=rs.getString(keyColumns[i]);
+                }
+                else{
+                    key+=("_"+rs.getString(keyColumns[i]));
+                }
+            }
+            resultJsonObject.put(key,item);
         }
-        catch (Exception ex) {
-            logger.error(HelperCommon.getStackTraceString(ex));
-        }
+        rs.close();
+        stmt.close();
         return resultJsonObject;
-    }
-    public static JSONObject getAlarms(Connection connection) {
-        String query = "SELECT * FROM alarms";
-        return getSelectQueryResults(connection,query,new String[] { "machine_id", "alarm_id", "alarm_type"});
-    }
-    public static JSONObject getBins(Connection connection) {
-        String query = "SELECT * FROM bins";
-        return getSelectQueryResults(connection,query,new String[] { "machine_id", "bin_id"});
-    }
-    public static JSONObject getBinsStateColors(Connection connection) {
-        String query = "SELECT * FROM bins_state_colors";
-        return getSelectQueryResults(connection,query,new String[] { "name"});
-    }
-    public static JSONObject getBoards(Connection connection) {
-        String query = "SELECT * FROM boards";
-        return getSelectQueryResults(connection,query,new String[] { "machine_id", "board_id"});
-    }
-    public static JSONObject getBoardsIo(Connection connection) {
-        String query = "SELECT * FROM boards_io";
-        return getSelectQueryResults(connection,query,new String[]{ "id"});
-    }
-    public static JSONObject getConveyors(Connection connection) {
-        String query = "SELECT * FROM conveyors";
-        return getSelectQueryResults(connection,query,new String[] { "machine_id", "conveyor_id"});
-    }
-    public static JSONObject getDevices(Connection connection) {
-        String query = "SELECT * FROM devicess";
-        return getSelectQueryResults(connection,query,new String[] { "machine_id", "device_id"});
     }
 }

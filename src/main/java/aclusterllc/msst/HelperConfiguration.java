@@ -122,76 +122,60 @@ public class HelperConfiguration {
         createDatabaseConnection();
         try {
             Connection connection=getConnection();
-            dbBasicInfo.put("alarms",HelperDatabase.getAlarms(connection));
-            dbBasicInfo.put("bins",HelperDatabase.getBins(connection));
-            dbBasicInfo.put("bins_state_colors",HelperDatabase.getBinsStateColors(connection));
-            dbBasicInfo.put("boards",HelperDatabase.getBoards(connection));
-            dbBasicInfo.put("boards_io",HelperDatabase.getBoardsIo(connection));
-            dbBasicInfo.put("conveyors",HelperDatabase.getConveyors(connection));
-            dbBasicInfo.put("devices",HelperDatabase.getDevices(connection));
-            //System.out.println(dbBasicInfo);
+            String query = "SELECT * FROM alarms";
+            dbBasicInfo.put("alarms",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "alarm_id", "alarm_type"}));
+            query = "SELECT * FROM bins";
+            dbBasicInfo.put("bins",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "bin_id"}));
+            query = "SELECT * FROM bins_states_colors ORDER BY ordering DESC";
+            dbBasicInfo.put("bins_states_colors",HelperDatabase.getSelectQueryResults(connection,query));
+            query = "SELECT * FROM boards";
+            dbBasicInfo.put("boards",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "board_id"}));
+            query = "SELECT * FROM boards_io";
+            dbBasicInfo.put("boards_io",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "id"}));
+            query = "SELECT * FROM conveyors";
+            dbBasicInfo.put("conveyors",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "conveyor_id"}));
+            query = "SELECT * FROM devices";
+            dbBasicInfo.put("devices",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "device_id"}));
+            query = "SELECT * FROM estop_locations";
+            dbBasicInfo.put("estop_locations",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "location_id"}));
+            query = "SELECT * FROM events";
+            dbBasicInfo.put("events",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "event_id"}));
+            query = "SELECT * FROM inducts";
+            dbBasicInfo.put("inducts",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "induct_id"}));
+            query = "SELECT * FROM inputs";
+            dbBasicInfo.put("inputs",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "input_id"}));
 
+            query = "SELECT * FROM machines";
+            JSONObject machines=HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id"});
+            dbBasicInfo.put("machines",machines);
+            for (String machineId : machines.keySet()) {
+                for(int i=0;i<32;i++){
+                    countersCurrentValue.put(machineId+"_"+(i+1),0);
+                }
+            }
+            query = "SELECT * FROM motors";
+            JSONObject motors=HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "motor_id"});
+            dbBasicInfo.put("motors",motors);
+            for (String motorKey : motors.keySet()) {
+                motorsCurrentSpeed.put(motorKey,0);
+            }
+            query = "SELECT * FROM parameters";
+            dbBasicInfo.put("parameters",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "param_id"}));
 
-//
-//            query = "SELECT * FROM bin_state_colors ORDER BY ordering DESC";
-//            dbBasicInfo.put("bin_state_colors",DatabaseHelper.getSelectQueryResults(connection,query));
-//
-//            query = "SELECT * FROM boards";
-//            dbBasicInfo.put("boards",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "board_id"}));
-//
-//            query = "SELECT * FROM board_ios";
-//            dbBasicInfo.put("board_ios",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "id"}));
-//
-//            query = "SELECT * FROM conveyors";
-//            dbBasicInfo.put("conveyors",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "conveyor_id"}));
-//
-//            query = "SELECT * FROM devices";
-//            dbBasicInfo.put("devices",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "device_id"}));
-//            query = "SELECT * FROM events";
-//            dbBasicInfo.put("events",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "event_id"}));
-//            query = "SELECT * FROM inducts";
-//            dbBasicInfo.put("inducts",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "induct_id"}));
-//
-//            query = "SELECT * FROM inputs";
-//            dbBasicInfo.put("inputs",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "input_id"}));
-//
-//            query = "SELECT * FROM machines";
-//            JSONObject machines=DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id"});
-//            dbBasicInfo.put("machines",machines);
-//            for (String machineId : machines.keySet()) {
-//                for(int i=0;i<32;i++){
-//                    countersCurrentValue.put(machineId+"_"+(i+1),0);
-//                }
-//            }
-//
-//            query = "SELECT * FROM motors";
-//            JSONObject motors=DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "motor_id"});
-//            dbBasicInfo.put("motors",motors);
-//            for (String motorKey : motors.keySet()) {
-//                motorsCurrentSpeed.put(motorKey,0);
-//            }
-//
-//            query = "SELECT * FROM parameters";
-//            dbBasicInfo.put("parameters",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "param_id"}));
-//
-//            query = "SELECT * FROM scs";
-//            dbBasicInfo.put("scs",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "value"}));
-//
-//            query = "SELECT * FROM sensors";
-//            dbBasicInfo.put("sensors",DatabaseHelper.getSelectQueryResults(connection,query,new String[] { "machine_id", "sensor_id"}));
-//            query = "INSERT IGNORE INTO statistics (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics);" +
-//                    "INSERT IGNORE INTO statistics_minutely (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_minutely);" +
-//                    "INSERT IGNORE INTO statistics_hourly (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_hourly);" +
-//                    "INSERT IGNORE INTO statistics_counter (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_counter);" +
-//                    "INSERT IGNORE INTO statistics_oee (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_oee);" +
-//                    "INSERT IGNORE INTO statistics_bins (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins);" +
-//                    "INSERT IGNORE INTO statistics_bins_counter (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins_counter);" +
-//                    "INSERT IGNORE INTO statistics_bins_hourly (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins_hourly);";
-//            DatabaseHelper.runMultipleQuery(connection,query);
-//        }
-//        catch (SQLException e) {
-//            logger.error("[Database] Failed To Connect with database.Closing Java Program."+CommonHelper.getStackTraceString(e));
-//            System.exit(0);
+            query = "SELECT * FROM scs";
+            dbBasicInfo.put("scs",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "value"}));
+            query = "SELECT * FROM sensors";
+            dbBasicInfo.put("sensors",HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id", "sensor_id"}));
+
+            query = "INSERT IGNORE INTO statistics (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics);" +
+                    "INSERT IGNORE INTO statistics_minutely (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_minutely);" +
+                    "INSERT IGNORE INTO statistics_hourly (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_hourly);" +
+                    "INSERT IGNORE INTO statistics_counter (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_counter);" +
+                    "INSERT IGNORE INTO statistics_oee (machine_id) SELECT DISTINCT machine_id FROM machines WHERE NOT EXISTS (SELECT * FROM statistics_oee);" +
+                    "INSERT IGNORE INTO statistics_bins (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins);" +
+                    "INSERT IGNORE INTO statistics_bins_counter (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins_counter);" +
+                    "INSERT IGNORE INTO statistics_bins_hourly (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE NOT EXISTS (SELECT * FROM statistics_bins_hourly);";
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (Exception ex) {
             logger.error("[Database] Failed To get Data from database.Closing Java Program.");
@@ -203,8 +187,9 @@ public class HelperConfiguration {
         try {
             Class.forName("com.mysql.jdbc.Driver");
         }
-        catch (ClassNotFoundException e) {
+        catch (ClassNotFoundException ex) {
             logger.info("[Database] Mysql Driver Not Found.Closing Java Program.");
+            logger.error(HelperCommon.getStackTraceString(ex));
             System.exit(0);
         }
         HikariConfig config = new HikariConfig();
