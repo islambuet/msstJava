@@ -140,7 +140,6 @@ public class ServerForHmi implements Runnable {
         }
         public synchronized void processReceivedData(byte[] b){
             buffer=buffer+new String( b, StandardCharsets.UTF_8 );
-            System.out.println("buffer:"+buffer);
             this.notify();
         }
         public void run(){
@@ -191,21 +190,103 @@ public class ServerForHmi implements Runnable {
         public void processReceivedMessage(JSONObject jsonObject){
             try {
                 JSONObject response=new JSONObject();
-
-
                 String request = jsonObject.getString("request");
                 JSONObject params = jsonObject.getJSONObject("params");
                 JSONArray requestData = jsonObject.getJSONArray("requestData");
-
                 response.put("request",request);
                 response.put("params",params);
-                System.out.println(requestData.length());
-                //notify
+                int machine_id=0;
+                if(params.has("machine_id")){machine_id=params.getInt("machine_id");}
+                if(requestData.length()>0){
+                    Connection connection=HelperConfiguration.getConnection();
+                    JSONObject responseData=new JSONObject();
+                    for(int i=0;i<requestData.length();i++){
+                        JSONObject requestFunction=requestData.getJSONObject(i);
+                        String requestFunctionName=requestFunction.getString("name");
+                        switch (requestFunctionName) {
+                            case "alarms_active": {
+                                responseData.put(requestFunctionName,HelperDatabase.getAlarmsActive(connection,machine_id));
+                                break;
+                            }
+
+                        }
+
+                    }
+                    connection.close();
+                    response.put("data",responseData);
+                    sendMessage(response.toString());
+                }
+                else {
+                    switch (request) {
+                        case "dbBasicInfo": {
+                            response.put("data", HelperConfiguration.dbBasicInfo);
+                            sendMessage(response.toString());
+                            break;
+                        }
+                        case "getLoginUser":{
+                            JSONObject responseData=new JSONObject();
+                            String username = params.getString("username");
+                            String password = params.getString("password");
+                            Connection connection=HelperConfiguration.getConnection();
+                            String query = String.format("SELECT id,name, role FROM users WHERE username='%s' AND password='%s' LIMIT 1", username, password);
+                            JSONArray queryResult=HelperDatabase.getSelectQueryResults(connection,query);
+
+                            if(queryResult.length()>0){
+                                responseData.put("status",true);
+                                responseData.put("user",queryResult.getJSONObject(0));
+                            }
+                            else{
+                                responseData.put("status",false);
+                            }
+                            connection.close();
+                            response.put("data",responseData);
+                            sendMessage(response.toString());
+                            break;
+                        }
+                        case "changeUserPassword":{
+                            JSONObject responseData=new JSONObject();
+                            responseData.put("status",false);
+                            int id = Integer.parseInt(params.get("id").toString());
+                            String password = params.get("password").toString();
+                            String password_new = params.get("password_new").toString();
+                            Connection connection=HelperConfiguration.getConnection();
+                            String query = String.format("SELECT id,password FROM users WHERE id='%d';", id);
+                            JSONArray queryResult=HelperDatabase.getSelectQueryResults(connection,query);
+
+                            if(queryResult.length()>0){
+                                JSONObject user=queryResult.getJSONObject(0);
+                                if(user.getString("password").equals(password)){
+                                    String updateQuery = format("UPDATE %s SET password='%s' WHERE id=%d;","users",password_new,id);
+                                    int num_row = HelperDatabase.runUpdateQuery(connection,updateQuery);
+                                    if(num_row>0){
+                                        responseData.put("status",true);
+                                        responseData.put("message","Password Changed Successfully.");
+                                    }
+                                    else{
+                                        responseData.put("message","Failed to change password");
+                                    }
+
+                                }
+                                else{
+                                    responseData.put("message","Old Password did not matched.");
+                                }
+                            }
+                            else{
+                                responseData.put("status",false);
+                                responseData.put("message","User not found.");
+                            }
+                            connection.close();
+                            response.put("data",responseData);
+                            sendMessage(response.toString());
+                            break;
+                        }
+                    }
+                }
+                notifyToHmiMessageObservers(jsonObject,response.getJSONObject("data"));
             }
             catch (Exception ex){
                 logger.error(HelperCommon.getStackTraceString(ex));
             }
-
         }
         public void sendMessage(String msg) {
             String startTag="<begin>";

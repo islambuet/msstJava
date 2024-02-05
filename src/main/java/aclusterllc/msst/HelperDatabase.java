@@ -80,4 +80,8 @@ public class HelperDatabase {
         stmt.close();
         return resultJsonObject;
     }
+    public static JSONArray getAlarmsActive(Connection connection,int machineId) throws SQLException {
+        String query = String.format("SELECT *,UNIX_TIMESTAMP(date_active) AS date_active_timestamp FROM alarms_active WHERE machine_id=%d ORDER BY id DESC", machineId);
+        return  getSelectQueryResults(connection,query);
+    }
 }
