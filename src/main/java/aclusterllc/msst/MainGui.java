@@ -53,7 +53,7 @@ public class MainGui implements ObserverSMMessage {
     }
 
     @Override
-    public void processSMMessage(JSONObject jsonSMMessage, JSONObject info) {
+    public void processSMMessage(JSONObject jsonMessage, JSONObject info) {
 
 
     }

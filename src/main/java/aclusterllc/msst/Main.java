@@ -27,6 +27,8 @@ public class Main {
         mainGui.appendToMainTextArea("Waiting Finished.");
         HelperConfiguration.loadDatabaseConfig();
         mainGui.appendToMainTextArea("Database Loading Finished");
+        ServerForHmi serverForHmi=new ServerForHmi();
+        serverForHmi.start();
 
 
         System.out.println("Main Started");
