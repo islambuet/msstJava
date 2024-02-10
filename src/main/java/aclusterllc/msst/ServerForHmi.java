@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.lang.String.format;
 
 public class ServerForHmi implements Runnable {
-    private Thread worker;
     Selector selector;
     ServerSocketChannel serverSocketChannel;
     ByteBuffer bufferForReadData = ByteBuffer.allocate(10240000);
@@ -35,7 +34,7 @@ public class ServerForHmi implements Runnable {
     }
     public void start(){
         logger.info("HMI Server Started");
-        worker = new Thread(this);
+        Thread worker = new Thread(this);
         try {
             selector = Selector.open();
             serverSocketChannel = ServerSocketChannel.open();
@@ -208,7 +207,10 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperDatabase.getAlarmsActive(connection,machine_id));
                                 break;
                             }
-
+                            case "machine_mode": {
+                                responseData.put(requestFunctionName,HelperDatabase.getMachineMode(connection,machine_id));
+                                break;
+                            }
                         }
 
                     }

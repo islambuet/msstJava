@@ -82,6 +82,14 @@ public class HelperDatabase {
     }
     public static JSONArray getAlarmsActive(Connection connection,int machineId) throws SQLException {
         String query = String.format("SELECT *,UNIX_TIMESTAMP(date_active) AS date_active_timestamp FROM alarms_active WHERE machine_id=%d ORDER BY id DESC", machineId);
-        return  getSelectQueryResults(connection,query);
+        return getSelectQueryResults(connection,query);
+    }
+    public static int getMachineMode(Connection connection,int machineId) throws SQLException{
+        String query = String.format("SELECT machine_mode FROM machines WHERE machine_id=%d", machineId);
+        JSONArray modeResult=getSelectQueryResults(connection,query);
+        if(modeResult.length()>0){
+            return modeResult.getJSONObject(0).getInt("machine_mode");
+        }
+        return 0;
     }
 }

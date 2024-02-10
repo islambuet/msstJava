@@ -13,6 +13,17 @@
       </Policies>
       <DefaultRolloverStrategy max="100"/>
     </RollingFile>
+    <RollingFile name="ClientForSM" fileName="logs\\ClientForSM.log"
+                 filePattern="logs\\$${date:yyyy-MM}\\ClientForSM-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} [%-5p] %c{1}:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100"/>
+    </RollingFile>
     <RollingFile name="ServerForHmi" fileName="logs\\ServerForHmi.log"
                  filePattern="logs\\$${date:yyyy-MM}\\ServerForHmi-%d{MM-dd-yyyy}-%i.log.gz">
       <PatternLayout>
@@ -26,6 +37,9 @@
     </RollingFile>
   </Appenders>
   <Loggers>
+    <Logger name="aclusterllc.msst.ClientForSM" level="info" additivity="false">
+      <AppenderRef ref="ClientForSM"/>
+    </Logger>
     <Logger name="aclusterllc.msst.ServerForHmi" level="info" additivity="false">
       <AppenderRef ref="ServerForHmi"/>
     </Logger>

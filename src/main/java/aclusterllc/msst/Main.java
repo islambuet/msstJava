@@ -2,6 +2,7 @@ package aclusterllc.msst;
 
 
 import org.apache.logging.log4j.core.config.Configurator;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,11 +28,24 @@ public class Main {
         mainGui.appendToMainTextArea("Waiting Finished.");
         HelperConfiguration.loadDatabaseConfig();
         mainGui.appendToMainTextArea("Database Loading Finished");
+
+        ClientForSMMessageQueueHandler clientForSMMessageQueueHandler=new ClientForSMMessageQueueHandler();
+        clientForSMMessageQueueHandler.start();
+
         ServerForHmi serverForHmi=new ServerForHmi();
+        JSONObject machines=(JSONObject)HelperConfiguration.dbBasicInfo.get("machines");
+        for (String key : machines.keySet()) {
+            ClientForSM clientForSM=new ClientForSM((JSONObject) machines.get(key),clientForSMMessageQueueHandler);
+            //clientForSM.addApeMessageObserver(mainGui);
+            //serverForHmi.addObserverHmiMessage(clientForSM);
+            clientForSM.start();
+        }
+
+
         serverForHmi.start();
 
 
         System.out.println("Main Started");
-        logger.info("hi");
+
     }
 }

@@ -23,7 +23,7 @@ public class HelperConfiguration {
     public static final JSONObject dbBasicInfo = new JSONObject();
     public static final JSONObject countersCurrentValue = new JSONObject();
     public static final JSONObject motorsCurrentSpeed = new JSONObject();
-    public static final Map<Integer, Integer> apeClientConnectionStatus  = new HashMap<>();
+    public static final Map<String, Integer> machinesConnectionStatus  = new HashMap<>();
     public static final JSONObject systemConstants = new JSONObject();
     public static void loadIniConfig(){
      //loading file config
@@ -149,6 +149,7 @@ public class HelperConfiguration {
             JSONObject machines=HelperDatabase.getSelectQueryResults(connection,query,new String[] { "machine_id"});
             dbBasicInfo.put("machines",machines);
             for (String machineId : machines.keySet()) {
+                machinesConnectionStatus.put(machineId,0);
                 for(int i=0;i<32;i++){
                     countersCurrentValue.put(machineId+"_"+(i+1),0);
                 }
