@@ -146,7 +146,7 @@ public class ServerForHmi implements Runnable {
                 try {
                     while (true){
                         wait();
-                        processReceivedData();
+                        processReceivedDataBuffer();
                     }
                 }
                 catch (Exception ex) {
@@ -156,7 +156,7 @@ public class ServerForHmi implements Runnable {
             System.out.println("Run Ended");
             //notifyToHmiMessageObservers(new JSONObject(),new JSONObject());
         }
-        public void processReceivedData(){
+        public void processReceivedDataBuffer(){
             String startTag="<begin>";
             String endTag="</begin>";
 
