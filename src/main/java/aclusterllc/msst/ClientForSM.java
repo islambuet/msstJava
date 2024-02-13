@@ -23,7 +23,6 @@ import static java.lang.Thread.sleep;
 
 
 public class ClientForSM implements Runnable {
-	private Thread pingThread;
 	Logger logger = LoggerFactory.getLogger(ClientForSM.class);
 	JSONObject clientInfo;
 	ClientForSMMessageQueueHandler clientForSMMessageQueueHandler;
@@ -40,7 +39,6 @@ public class ClientForSM implements Runnable {
 	public ClientForSM(JSONObject clientInfo, ClientForSMMessageQueueHandler clientForSMMessageQueueHandler) {
 		this.clientInfo=clientInfo;
 		this.clientForSMMessageQueueHandler=clientForSMMessageQueueHandler;
-
 		//start3minTpuThread();
 	}
 //	private void start3minTpuThread() {
@@ -141,7 +139,6 @@ public class ClientForSM implements Runnable {
 	}
 	public void run(){
 		while (true){
-			System.out.println(HelperConfiguration.machinesConnectionStatus);
 			connectedWithSM=false;//always false
 			try {
 				logger.info("[CONNECT] Trying to connect  with SM - "+clientInfo.get("machine_id") );
@@ -218,7 +215,7 @@ public class ClientForSM implements Runnable {
 		byte[] b = new byte[buffer.position()];
 		buffer.flip();
 		buffer.get(b);
-		//processReceivedDataFromAPe(b);
+		processReceivedDataFromSM(b);
 
 	}
 	public void disconnectConnectedSMServer() {
@@ -233,30 +230,30 @@ public class ClientForSM implements Runnable {
 		connectedWithSM=false;
 		//worker.interrupt();
 	}
-//
-//	public void processReceivedDataFromAPe(byte[] b){
-//		while (b.length>7){
-//			JSONObject jsonObject=new JSONObject();
-//			jsonObject.put("object",this);
-//			int messageId = CommonHelper.bytesToInt(Arrays.copyOfRange(b, 0, 4));
-//			int messageLength = CommonHelper.bytesToInt(Arrays.copyOfRange(b, 4, 8));
-//
-//			byte[] bodyBytes = null;
-//			if(messageLength>(b.length)){
-//				System.out.println("Invalid data length");
-//				break;
-//			}
-//			if(messageLength > 8) {
-//				bodyBytes = Arrays.copyOfRange(b, 8, messageLength);
-//				jsonObject.put("bodyBytes",bodyBytes);
-//			}
-//			jsonObject.put("messageId",messageId);
-//			jsonObject.put("messageLength",messageLength);
-//
-//			apeClientMessageQueueHandler.addMessageToBuffer(jsonObject);
-//			b= Arrays.copyOfRange(b, messageLength, b.length);
-//		}
-//	}
+
+	public void processReceivedDataFromSM(byte[] b){
+		while (b.length>7){
+			JSONObject jsonObject=new JSONObject();
+			jsonObject.put("object",this);
+			int messageId = HelperCommon.bytesToInt(Arrays.copyOfRange(b, 0, 4));
+			int messageLength = HelperCommon.bytesToInt(Arrays.copyOfRange(b, 4, 8));
+
+			byte[] bodyBytes = null;
+			if(messageLength>(b.length)){
+				System.out.println("Invalid data length");
+				break;
+			}
+			if(messageLength > 8) {
+				bodyBytes = Arrays.copyOfRange(b, 8, messageLength);
+				jsonObject.put("bodyBytes",bodyBytes);
+			}
+			jsonObject.put("messageId",messageId);
+			jsonObject.put("messageLength",messageLength);
+
+			clientForSMMessageQueueHandler.addMessageToBuffer(jsonObject);
+			b= Arrays.copyOfRange(b, messageLength, b.length);
+		}
+	}
 //	public void addApeMessageObserver(ApeMessageObserver apeMessageObserver){
 //		apeMessageObservers.add(apeMessageObserver);
 //	}
@@ -268,170 +265,13 @@ public class ClientForSM implements Runnable {
 //			apeMessageObserver.processApeMessage(jsonMessage,info);
 //		}
 //	}
-//	public void processMessage(JSONObject jsonMessage) {
-//		JSONObject info=new JSONObject();
-//		int messageId=jsonMessage.getInt("messageId");
-//		int messageLength=jsonMessage.getInt("messageLength");
-//		if(messageLength>8){
-//			try {
-//				byte[] bodyBytes= (byte[]) jsonMessage.get("bodyBytes");
-//				//byte[] timestampBytes = Arrays.copyOfRange(bodyBytes, 0, 4);
-//				byte[] dataBytes = Arrays.copyOfRange(bodyBytes, 4, bodyBytes.length);
-//				Connection connection=ConfigurationHelper.getConnection();
-//				//Server >> Client Messages
-//				switch (messageId){
-//					case 1:
-//						ApeClientHelper.handleMessage_1(connection,clientInfo,dataBytes);
-//						break;
-//					case 2:
-//						ApeClientHelper.handleMessage_2(connection,clientInfo,dataBytes);
-//						break;
-//					case 3:
-//						ApeClientHelper.handleMessage_3(connection,clientInfo,dataBytes);
-//						break;
-//					case 4:
-//					case 5:
-//						ApeClientHelper.handleMessage_4_5(connection,clientInfo,dataBytes,messageId);
-//						break;
-//					case 6:
-//					case 8:
-//					case 10:
-//					case 12:
-//					case 17:
-//					case 40:
-//						ApeClientHelper.handleMessage_6_8_10_12_17_40(connection,clientInfo,dataBytes,messageId);
-//						break;
-//					case 7:
-//					case 9:
-//					case 11:
-//					case 13:
-//					case 18:
-//					case 41:
-//						ApeClientHelper.handleMessage_7_9_11_13_18_41(connection,clientInfo,dataBytes,messageId);
-//						break;
-//					case 14:
-//						ApeClientHelper.handleMessage_14(connection,clientInfo,dataBytes);
-//						break;
-//					case 15:
-//						ApeClientHelper.handleMessage_15(connection,clientInfo,dataBytes);
-//						break;
-//					case 20:
-//						info=ApeClientHelper.handleMessage_20(connection,clientInfo,dataBytes);
-//						break;
-//					case 21:
-//						info=ApeClientHelper.handleMessage_21(connection,clientInfo,dataBytes);
-//						break;
-//					case 22:
-//						info=ApeClientHelper.handleMessage_22(connection,clientInfo,dataBytes);
-//						break;
-//					case 42:
-//						ApeClientHelper.handleMessage_42(connection,clientInfo,dataBytes);
-//						break;
-//					case 43:
-//						ApeClientHelper.handleMessage_43(connection,clientInfo,dataBytes);
-//						break;
-//					case 44:
-//						info=ApeClientHelper.handleMessage_44(connection,clientInfo,dataBytes);
-//						break;
-//					case 45:
-//						//nothing doing. Receiving only event Id TODO For 360
-//						break;
-//					case 46:
-//						ApeClientHelper.handleMessage_46(connection,clientInfo,dataBytes);
-//						break;
-//					case 47:
-//						ApeClientHelper.handleMessage_47(connection,clientInfo,dataBytes);
-//						break;
-//					case 48:
-//						ApeClientHelper.handleMessage_48(connection,clientInfo,dataBytes);
-//						break;
-//					case 49:
-//						ApeClientHelper.handleMessage_49(connection,clientInfo,dataBytes);
-//						break;
-//					case 50:
-//						//nothing doing. Receiving only estop state and location. TODO For 360
-//						break;
-//					case 51:
-//						//nothing doing. Receiving only reason. TODO For 360
-//						break;
-//					case 52:
-//						//nothing doing. Receiving only speed. TODO For 360
-//						break;
-//					case 53:
-//						ApeClientHelper.handleMessage_53(connection,clientInfo,dataBytes);
-//						break;
-//					case 54:
-//						ApeClientHelper.handleMessage_54(connection,clientInfo,dataBytes);
-//						break;
-//					case 55:
-//						ApeClientHelper.handleMessage_55(connection,this,dataBytes);
-//						break;
-//					case 56:
-//						ApeClientHelper.handleMessage_56(connection,clientInfo,dataBytes);
-//						break;
-//					case 57:
-//						ApeClientHelper.handleMessage_57(connection,clientInfo,dataBytes);
-//						break;
-//				}
-//				//Client >> Server
-//				//MSG_ID = 115
-//				//MSG_ID = 111 Missing doc
-//				//MSG_ID = 115
-//				//MSG_ID = 120
-//				//MSG_ID = 123
-//				//MSG_ID = 124
-//				//MSG_ID = 125
-//				connection.close();
-//			}
-//			catch (Exception ex){
-//				logger.error("[MESSAGE_PROCESS]"+CommonHelper.getStackTraceString(ex));
-//			}
-//		}
-//		//MSG_LENGTH = 8
-//		else {
-//			switch(messageId) {
-//				case 16:
-//					break;
-//				case 30:
-//					pingCounter=0;
-//					break;
-//				case 58:
-//					Runtime r = Runtime.getRuntime();
-//					try
-//					{
-//						logger.info("Shutting down after 2 seconds.");
-//						r.exec("shutdown -s -t 2");
-//					}
-//					catch (IOException ex) {
-//						logger.error(CommonHelper.getStackTraceString(ex));
-//					}
-//					break;
-//				default:
-//					// code block
-//			}
-//			//Client >> Server
-//			//MSG_ID = 101
-//			//MSG_ID = 102
-//			//MSG_ID = 103
-//			//MSG_ID = 103
-//			//MSG_ID = 105
-//			//MSG_ID = 106
-//			//MSG_ID = 107
-//			//MSG_ID = 108
-//			//MSG_ID = 109
-//			//MSG_ID = 110
-//			//MSG_ID = 112
-//			//MSG_ID = 113
-//			//MSG_ID = 114
-//			//MSG_ID = 116
-//			//MSG_ID = 130
-//		}
-////		if(messageId==20|| messageId==21|| messageId==22){
-////			System.out.println(messageId+" : "+ info);
-////		}
-//		notifyToApeMessageObservers(jsonMessage,info);
-//
-//	}
+	public void processReceivedMessageFromSM(JSONObject jsonMessage) {
+		JSONObject info=new JSONObject();
+		int messageId=jsonMessage.getInt("messageId");
+		int messageLength=jsonMessage.getInt("messageLength");
+		System.out.println("Received Message"+jsonMessage);
+
+	}
 //
 //	@Override
 //	public void processHmiMessage(JSONObject jsonMessage, JSONObject info) {

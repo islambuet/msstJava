@@ -36,7 +36,7 @@ public class ClientForSMMessageQueueHandler {
             try {
                 JSONObject jsonMessage = messageBuffer.take();//waits if empty
                 ClientForSM clientForSM= (ClientForSM) jsonMessage.get("object");
-                //clientForSM.processMessage(jsonMessage);
+                clientForSM.processReceivedMessageFromSM(jsonMessage);
             }
             catch (InterruptedException ex) {
                 logger.error("Error in Queue take.");
