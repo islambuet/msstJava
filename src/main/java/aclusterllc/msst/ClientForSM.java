@@ -167,10 +167,8 @@ public class ClientForSM implements Runnable {
 			startPingThread();
 			while (connectedWithSM){
 				try {
-					logger.info("waiting for connect or message");
 					selector.select();
 					Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-					logger.info("waiting for message ends");
 					while (iterator.hasNext()) {
 						SelectionKey key = iterator.next();
 						iterator.remove();
@@ -179,7 +177,6 @@ public class ClientForSM implements Runnable {
 						}
 						if (key.isReadable()) {
 							readReceivedDataFromSM(key);
-							logger.info("read Message");
 						}
 					}
 				}
@@ -266,12 +263,175 @@ public class ClientForSM implements Runnable {
 //		}
 //	}
 	public void processReceivedMessageFromSM(JSONObject jsonMessage) {
-		JSONObject info=new JSONObject();
-		int messageId=jsonMessage.getInt("messageId");
-		int messageLength=jsonMessage.getInt("messageLength");
-		System.out.println("Received Message"+jsonMessage);
+	JSONObject info=new JSONObject();
+	int messageId=jsonMessage.getInt("messageId");
+	int messageLength=jsonMessage.getInt("messageLength");
+	if(messageLength>8){
+		try {
+			byte[] bodyBytes= (byte[]) jsonMessage.get("bodyBytes");
+			byte[] dataBytes = Arrays.copyOfRange(bodyBytes, 4, bodyBytes.length);
+			Connection connection=HelperConfiguration.getConnection();
+			//Server >> Client Messages
+			switch (messageId){
+				case 1:
+					ClientForSMMessageHandler.handleMessage_1(connection,clientInfo,dataBytes);
+					break;
+//				case 2:
+//					ClientForSMMessageHandler.handleMessage_2(connection,clientInfo,dataBytes);
+//					break;
+//				case 3:
+//					ClientForSMMessageHandler.handleMessage_3(connection,clientInfo,dataBytes);
+//					break;
+//				case 4:
+//				case 5:
+//					ClientForSMMessageHandler.handleMessage_4_5(connection,clientInfo,dataBytes,messageId);
+//					break;
+//				case 6:
+//				case 8:
+//				case 10:
+//				case 12:
+//				case 17:
+//				case 40:
+//					ClientForSMMessageHandler.handleMessage_6_8_10_12_17_40(connection,clientInfo,dataBytes,messageId);
+//					break;
+//				case 7:
+//				case 9:
+//				case 11:
+//				case 13:
+//				case 18:
+//				case 41:
+//					ClientForSMMessageHandler.handleMessage_7_9_11_13_18_41(connection,clientInfo,dataBytes,messageId);
+//					break;
+//				case 14:
+//					ClientForSMMessageHandler.handleMessage_14(connection,clientInfo,dataBytes);
+//					break;
+//				case 15:
+//					ClientForSMMessageHandler.handleMessage_15(connection,clientInfo,dataBytes);
+//					break;
+//				case 20:
+//					info=ClientForSMMessageHandler.handleMessage_20(connection,clientInfo,dataBytes);
+//					break;
+//				case 21:
+//					info=ClientForSMMessageHandler.handleMessage_21(connection,clientInfo,dataBytes);
+//					break;
+//				case 22:
+//					info=ClientForSMMessageHandler.handleMessage_22(connection,clientInfo,dataBytes);
+//					break;
+//				case 42:
+//					ClientForSMMessageHandler.handleMessage_42(connection,clientInfo,dataBytes);
+//					break;
+//				case 43:
+//					ClientForSMMessageHandler.handleMessage_43(connection,clientInfo,dataBytes);
+//					break;
+//				case 44:
+//					info=ClientForSMMessageHandler.handleMessage_44(connection,clientInfo,dataBytes);
+//					break;
+//				case 45:
+//					//nothing doing. Receiving only event Id TODO For 360
+//					break;
+//				case 46:
+//					ClientForSMMessageHandler.handleMessage_46(connection,clientInfo,dataBytes);
+//					break;
+//				case 47:
+//					ClientForSMMessageHandler.handleMessage_47(connection,clientInfo,dataBytes);
+//					break;
+//				case 48:
+//					ClientForSMMessageHandler.handleMessage_48(connection,clientInfo,dataBytes);
+//					break;
+//				case 49:
+//					ClientForSMMessageHandler.handleMessage_49(connection,clientInfo,dataBytes);
+//					break;
+//				case 50:
+//					//nothing doing. Receiving only estop state and location. TODO For 360
+//					break;
+//				case 51:
+//					//nothing doing. Receiving only reason. TODO For 360
+//					break;
+//				case 52:
+//					//nothing doing. Receiving only speed. TODO For 360
+//					break;
+//				case 53:
+//					ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes);
+//					break;
+//				case 54:
+//					ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
+//					break;
+//				case 55:
+//					ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
+//					break;
+//				case 56:
+//					ClientForSMMessageHandler.handleMessage_56(connection,clientInfo,dataBytes);
+//					break;
+//				case 57:
+//					ClientForSMMessageHandler.handleMessage_57(connection,clientInfo,dataBytes);
+//					break;
+				default:
+					logger.error("[MESSAGE_PROCESS][UNHANDLED] messageId: "+messageId);
+					break;
 
+			}
+			//Client >> Server
+			//MSG_ID = 115
+			//MSG_ID = 111 Missing doc
+			//MSG_ID = 115
+			//MSG_ID = 120
+			//MSG_ID = 123
+			//MSG_ID = 124
+			//MSG_ID = 125
+			connection.close();
+		}
+		catch (Exception ex){
+			logger.error("[MESSAGE_PROCESS][EXCEPTION] messageId: "+messageId);
+			logger.error(HelperCommon.getStackTraceString(ex));
+		}
 	}
+	//MSG_LENGTH = 8
+	else {
+		switch(messageId) {
+			case 16:
+				break;
+			case 30:
+				pingCounter=0;
+				break;
+			case 58:
+				Runtime r = Runtime.getRuntime();
+				try
+				{
+					logger.info("Shutting down after 2 seconds.");
+					r.exec("shutdown -s -t 2");
+				}
+				catch (IOException ex) {
+					logger.error("[MESSAGE_PROCESS][EXCEPTION] messageId: "+messageId);
+					logger.error(HelperCommon.getStackTraceString(ex));
+				}
+				break;
+			default:
+				logger.error("[MESSAGE_PROCESS][UNHANDLED] messageId: "+messageId);
+				break;
+		}
+		//Client >> Server
+		//MSG_ID = 101
+		//MSG_ID = 102
+		//MSG_ID = 103
+		//MSG_ID = 103
+		//MSG_ID = 105
+		//MSG_ID = 106
+		//MSG_ID = 107
+		//MSG_ID = 108
+		//MSG_ID = 109
+		//MSG_ID = 110
+		//MSG_ID = 112
+		//MSG_ID = 113
+		//MSG_ID = 114
+		//MSG_ID = 116
+		//MSG_ID = 130
+	}
+//		if(messageId==20|| messageId==21|| messageId==22){
+//			System.out.println(messageId+" : "+ info);
+//		}
+	//notifyToApeMessageObservers(jsonMessage,info);
+
+}
 //
 //	@Override
 //	public void processHmiMessage(JSONObject jsonMessage, JSONObject info) {

@@ -7,3 +7,5 @@
 # Create Artifacts for exe 
 # for database timer
     SET GLOBAL event_scheduler = ON;
+# To know active connections of HikariPool 
+    HelperConfiguration.hikariDataSource.getHikariPoolMXBean().getActiveConnections()
