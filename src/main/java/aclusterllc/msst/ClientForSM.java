@@ -34,7 +34,7 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 	ByteBuffer buffer = ByteBuffer.allocate(10240000);
 	private int pingCounter = 0;
 	private final long pingDelayMillis = 2500;
-	private final List<ObserverSMMessage> sMMessageObservers = new ArrayList<>();
+	private final List<ObserverSMMessage> observersSMMessage = new ArrayList<>();
 
 	public ClientForSM(JSONObject clientInfo, ClientForSMMessageQueueHandler clientForSMMessageQueueHandler) {
 		this.clientInfo=clientInfo;
@@ -92,11 +92,11 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					//send Text editor notification
 					try {
 						sleep(pingDelayMillis);
-//						JSONObject jsonObject=new JSONObject();
-//						jsonObject.put("messageId",130);
-//						jsonObject.put("messageLength",8);
-//						jsonObject.put("object",this);
-//						notifyToApeMessageObservers(jsonObject,new JSONObject());
+						JSONObject jsonObject=new JSONObject();
+						jsonObject.put("messageId",130);
+						jsonObject.put("messageLength",8);
+						jsonObject.put("object",this);
+						notifyObserversSMMessage(jsonObject,new JSONObject());
 						sleep(pingDelayMillis);
 					}
 					catch (InterruptedException ex) {
@@ -251,17 +251,17 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 			b= Arrays.copyOfRange(b, messageLength, b.length);
 		}
 	}
-//	public void addApeMessageObserver(ApeMessageObserver apeMessageObserver){
-//		apeMessageObservers.add(apeMessageObserver);
-//	}
-//	public void notifyToApeMessageObservers(JSONObject jsonMessage,JSONObject info){
-//		//int messageId=jsonMessage.getInt("messageId");
-//		for(ApeMessageObserver apeMessageObserver:apeMessageObservers){
-//			//System.out.println(apeMessageObserver.getClass().getSimpleName());
-//			//limit messageId for others class
-//			apeMessageObserver.processApeMessage(jsonMessage,info);
-//		}
-//	}
+	public void addObserverSMMessage(ObserverSMMessage observerSMMessage){
+		observersSMMessage.add(observerSMMessage);
+	}
+	public void notifyObserversSMMessage(JSONObject jsonMessage,JSONObject info){
+		//int messageId=jsonMessage.getInt("messageId");
+		for(ObserverSMMessage observerSMMessage:observersSMMessage){
+			//System.out.println(observerSMMessage.getClass().getSimpleName());
+			//limit messageId for others class
+			observerSMMessage.processSMMessage(jsonMessage,info);
+		}
+	}
 	public void processReceivedMessageFromSM(JSONObject jsonMessage) {
 		JSONObject jsonInfo=new JSONObject();
 		int messageId=jsonMessage.getInt("messageId");
@@ -426,11 +426,8 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 			//MSG_ID = 116
 			//MSG_ID = 130
 		}
-	//		if(messageId==20|| messageId==21|| messageId==22){
-	//			System.out.println(messageId+" : "+ info);
-	//		}
-		//notifyToApeMessageObservers(jsonMessage,jsonInfo.get("data");
-		System.out.println(messageId+" "+jsonInfo);
+		notifyObserversSMMessage(jsonMessage,jsonInfo);
+		//System.out.println(messageId+" "+jsonInfo);
 
 }
 //

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -54,6 +55,35 @@ public class MainGui implements ObserverSMMessage {
 
     @Override
     public void processSMMessage(JSONObject jsonMessage, JSONObject info) {
+        int messageId=jsonMessage.getInt("messageId");
+        ClientForSM clientForSM= (ClientForSM) jsonMessage.get("object");
+        if(messageId==30){
+            pingLabel.setText("\u26AB");
+        }
+        else if(messageId==130){
+            pingLabel.setText("");
+        }
+        else{
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+            String displayMessage = String.format("[%s] :: %s [%s][M:%s].",now.format(dateTimeFormatter),((JSONObject)HelperConfiguration.systemConstants.get("SM_MESSAGE_ID_NAME")).get(messageId+""),  messageId,clientForSM.clientInfo.get("machine_id"));
+//                if(info.has("mainGuiMessage")){
+//                    mainTextArea.append(info.getString("mainGuiMessage")+"\r\n");
+//                }
+
+            int SCROLL_BUFFER_SIZE = 199;
+            int numLinesToTrunk = mainTextArea.getLineCount() - SCROLL_BUFFER_SIZE;
+            if (numLinesToTrunk > 0) {
+                try {
+                    int posOfLastLineToTrunk = mainTextArea.getLineEndOffset(numLinesToTrunk - 1);
+                    mainTextArea.replaceRange("", 0, posOfLastLineToTrunk);
+                }
+                catch (BadLocationException ex) {
+                    logger.error(HelperCommon.getStackTraceString(ex));
+                }
+            }
+            mainTextArea.append(displayMessage+"\r\n");
+        }
 
 
     }

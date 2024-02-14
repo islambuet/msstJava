@@ -36,7 +36,7 @@ public class Main {
         JSONObject machines=(JSONObject)HelperConfiguration.dbBasicInfo.get("machines");
         for (String key : machines.keySet()) {
             ClientForSM clientForSM=new ClientForSM((JSONObject) machines.get(key),clientForSMMessageQueueHandler);
-            //clientForSM.addApeMessageObserver(mainGui);
+            clientForSM.addObserverSMMessage(mainGui);
             serverForHmi.addObserverHmiMessage(clientForSM);
             clientForSM.start();
         }
