@@ -265,7 +265,6 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 	public void processReceivedMessageFromSM(JSONObject jsonMessage) {
 		JSONObject jsonInfo=new JSONObject();
 		int messageId=jsonMessage.getInt("messageId");
-		jsonInfo.put("data",new JSONObject());
 		int messageLength=jsonMessage.getInt("messageLength");
 		if(messageLength>8){
 			try {
@@ -275,18 +274,18 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 				//Server >> Client Messages
 				switch (messageId){
 					case 1:
-						jsonInfo.put("data",ClientForSMMessageHandler.handleMessage_1(connection,clientInfo,dataBytes));
+						jsonInfo.put("machineModeStateUpdated",ClientForSMMessageHandler.handleMessage_1(connection,clientInfo,dataBytes));
 						break;
 					case 2:
-						ClientForSMMessageHandler.handleMessage_2(connection,clientInfo,dataBytes);
+						jsonInfo.put("inputsStatesPrevious",ClientForSMMessageHandler.handleMessage_2(connection,clientInfo,dataBytes));
 						break;
 					case 3:
-						ClientForSMMessageHandler.handleMessage_3(connection,clientInfo,dataBytes);
+						jsonInfo.put("inputStatePrevious",ClientForSMMessageHandler.handleMessage_3(connection,clientInfo,dataBytes));
 						break;
-	//				case 4:
-	//				case 5:
-	//					ClientForSMMessageHandler.handleMessage_4_5(connection,clientInfo,dataBytes,messageId);
-	//					break;
+					case 4:
+					case 5:
+						jsonInfo.put("alarmsActivePrevious",ClientForSMMessageHandler.handleMessage_4_5(connection,clientInfo,dataBytes,messageId));
+						break;
 	//				case 6:
 	//				case 8:
 	//				case 10:

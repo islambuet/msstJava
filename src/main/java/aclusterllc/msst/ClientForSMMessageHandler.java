@@ -23,13 +23,12 @@ public class ClientForSMMessageHandler {
         String updateQuery = format("UPDATE machines SET `machine_state`=%d, `machine_mode`=%d, `updated_at`=now()  WHERE `machine_id`=%d LIMIT 1",dataBytes[0],dataBytes[1],clientInfo.getInt("machine_id"));
         return HelperDatabase.runUpdateQuery(connection,updateQuery);
     }
-    public static void handleMessage_2(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
+    public static JSONObject handleMessage_2(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject inputsInfo= (JSONObject) HelperConfiguration.dbBasicInfo.get("inputs");
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
 
         int machineId=clientInfo.getInt("machine_id");
         JSONObject inputsCurrentState=HelperDatabase.getInputsStates(connection,machineId);
-        System.out.println(bits[7]+" "+bits[8]);
         String query="";
         for(int i=0;i<bits.length;i++){
             boolean insertHistory=false;
@@ -49,44 +48,45 @@ public class ClientForSMMessageHandler {
             }
         }
         HelperDatabase.runMultipleQuery(connection,query);
+        return inputsCurrentState;
 
     }
-    public static void handleMessage_3(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
+    public static JSONObject handleMessage_3(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject inputsInfo= (JSONObject) HelperConfiguration.dbBasicInfo.get("inputs");
         int machineId=clientInfo.getInt("machine_id");
         int inputId = HelperCommon.bytesToInt(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
-        Statement stmt = connection.createStatement();
-        String query = String.format("SELECT id,state FROM inputs_states WHERE machine_id=%d AND input_id=%d", machineId,inputId);
-        ResultSet rs = stmt.executeQuery(query);
-        if (rs.next())
-        {
-            if(rs.getInt("state")!=state){
-                String query2= format("UPDATE inputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",state,rs.getLong("id"));
+        String query = String.format("SELECT * FROM inputs_states WHERE machine_id=%d AND input_id=%d", machineId,inputId);
+        JSONArray queryResult=HelperDatabase.getSelectQueryResults(connection,query);
+        if(queryResult.length()>0){
+            JSONObject inputState=queryResult.getJSONObject(0);
+            if(inputState.getInt("state")!=state){
+                String query2= format("UPDATE inputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",state,inputState.getLong("id"));
                 if((inputsInfo.has(machineId+"_"+inputId)) && (((JSONObject)inputsInfo.get(machineId+"_"+inputId)).getInt("enable_history")==1)){
                     query2+= format("INSERT INTO inputs_states_history (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,inputId,state);
                 }
-                Statement stmt2 = connection.createStatement();
-                stmt2.execute(query2);
-                stmt2.close();
+                HelperDatabase.runMultipleQuery(connection,query2);
             }
+            return inputState;
         }
-        rs.close();
-        stmt.close();
+        else{
+            return new JSONObject();
+        }
+
 
     }
-    /*public static void handleMessage_4_5(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
+    public static JSONObject handleMessage_4_5(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONArray activeAlarms= DatabaseHelper.getActiveAlarms(connection,machineId);
-        JSONObject jsonActiveAlarms=new JSONObject();
+        JSONArray alarmsActive= HelperDatabase.getAlarmsActive(connection,machineId);
+        JSONObject jsonAlarmsActive=new JSONObject();
         int alarm_type=0;////messageId=4
         if(messageId==5){
             alarm_type=1;
         }
-        for(int i=0;i<activeAlarms.length();i++){
-            JSONObject item= (JSONObject) activeAlarms.get(i);
+        for(int i=0;i<alarmsActive.length();i++){
+            JSONObject item= (JSONObject) alarmsActive.get(i);
             if(item.getInt("alarm_type")==alarm_type){
-                jsonActiveAlarms.put(item.getInt("machine_id")+"_"+item.getInt("alarm_id"),item);
+                jsonAlarmsActive.put(item.getInt("machine_id")+"_"+item.getInt("alarm_id"),item);
             }
 
         }
@@ -95,31 +95,25 @@ public class ClientForSMMessageHandler {
 
         for(int i=0;i<bits.length;i++){
             if(bits[i]==1){
-                if(!(jsonActiveAlarms.has(machineId+"_"+(i+1)))){
-                    query+= format("INSERT INTO active_alarms (`machine_id`, `alarm_id`,`alarm_type`) VALUES (%d,%d,%d);",machineId,(i+1),alarm_type);
+                if(!(jsonAlarmsActive.has(machineId+"_"+(i+1)))){
+                    query+= format("INSERT INTO alarms_active (`machine_id`, `alarm_id`,`alarm_type`) VALUES (%d,%d,%d);",machineId,(i+1),alarm_type);
                 }
             }
             else{
-                if((jsonActiveAlarms.has(machineId+"_"+(i+1)))){
-                    JSONObject item= (JSONObject) jsonActiveAlarms.get(machineId+"_"+(i+1));
-                    query+= format("INSERT INTO alarms_history (`machine_id`, `alarm_id`,`alarm_type`,`date_active`) VALUES (%d,%d,%d,'%s');"
-                            ,machineId,(i+1),alarm_type,item.get("date_active"));
-                    query+=format("DELETE FROM active_alarms where id=%d;",item.getLong("id"));
+                if((jsonAlarmsActive.has(machineId+"_"+(i+1)))){
+                    JSONObject item= (JSONObject) jsonAlarmsActive.get(machineId+"_"+(i+1));
+                    query+= format("INSERT INTO alarms_history (`machine_id`, `alarm_id`,`alarm_type`,`date_active`) VALUES (%d,%d,%d,'%s');",machineId,(i+1),alarm_type,item.get("date_active"));
+                    query+=format("DELETE FROM alarms_active where id=%d;",item.getLong("id"));
                 }
-
             }
         }
-        try {
-            DatabaseHelper.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return jsonAlarmsActive;
 
     }
-    public static void handleMessage_6_8_10_12_17_40(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
+    /*public static void handleMessage_6_8_10_12_17_40(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject binStates=DatabaseHelper.getBinStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject binStates=HelperDatabase.getBinStates(connection,clientInfo.getInt("machine_id"));
         JSONObject bins= (JSONObject) ConfigurationHelper.dbBasicInfo.get("bins");
         String columName="pe_blocked";////messageId=6
         if(messageId==8){
@@ -165,7 +159,7 @@ public class ClientForSMMessageHandler {
         }
         //System.out.println("Query: "+query);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -173,7 +167,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_7_9_11_13_18_41(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject binStates=DatabaseHelper.getBinStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject binStates=HelperDatabase.getBinStates(connection,clientInfo.getInt("machine_id"));
         JSONObject bins= (JSONObject) ConfigurationHelper.dbBasicInfo.get("bins");
         int bin_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
@@ -216,7 +210,7 @@ public class ClientForSMMessageHandler {
         }
         //System.out.println("Query: "+query);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -225,7 +219,7 @@ public class ClientForSMMessageHandler {
     public static void handleMessage_14(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         JSONObject devices= (JSONObject) ConfigurationHelper.dbBasicInfo.get("devices");
-        JSONObject deviceStates=DatabaseHelper.getDeviceStates(connection,machineId);
+        JSONObject deviceStates=HelperDatabase.getDeviceStates(connection,machineId);
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
         String query="";
         for(int i=0;i<bits.length;i++){
@@ -242,7 +236,7 @@ public class ClientForSMMessageHandler {
             }
         }
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -251,7 +245,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_15(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject deviceStates=DatabaseHelper.getDeviceStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject deviceStates=HelperDatabase.getDeviceStates(connection,clientInfo.getInt("machine_id"));
         int device_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
 
@@ -268,7 +262,7 @@ public class ClientForSMMessageHandler {
             query+= format("INSERT INTO device_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
         }
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -286,7 +280,7 @@ public class ClientForSMMessageHandler {
             int weight = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 16, 20));
             int reject_code=dataBytes[20];
             String queryCheckProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-            JSONArray queryCheckProductResult=DatabaseHelper.getSelectQueryResults(connection,queryCheckProduct);
+            JSONArray queryCheckProductResult=HelperDatabase.getSelectQueryResults(connection,queryCheckProduct);
             if(queryCheckProductResult.length()>0){
                 productInfo=queryCheckProductResult.getJSONObject(0);
                 productInfo.put("length",length);
@@ -297,7 +291,7 @@ public class ClientForSMMessageHandler {
                 String query =format("UPDATE products SET length=%d, width=%d, height=%d, weight=%d, reject_code=%d, dimension_at=NOW() WHERE id=%d;",
                          length, width, height, weight, reject_code, productInfo.getLong("id"));
 
-                DatabaseHelper.runMultipleQuery(connection,query);
+                HelperDatabase.runMultipleQuery(connection,query);
                 logger.info("[PRODUCT][20] Product Updated. MailId=" + mailId);
             }
             else{
@@ -361,7 +355,7 @@ public class ClientForSMMessageHandler {
             String query = "";
             String queryCreateNew = "";
             String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-            JSONArray queryCheckProductResult = DatabaseHelper.getSelectQueryResults(connection, queryCheckProduct);
+            JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
 
             if (queryCheckProductResult.length() > 0) {
                 productInfo = queryCheckProductResult.getJSONObject(0);
@@ -419,7 +413,7 @@ public class ClientForSMMessageHandler {
 
             String query = "";
             String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machine_id, mail_id);
-            JSONArray queryCheckProductResult = DatabaseHelper.getSelectQueryResults(connection, queryCheckProduct);
+            JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
 
             if (queryCheckProductResult.length() > 0) {
                 productInfo = queryCheckProductResult.getJSONObject(0);
@@ -432,8 +426,8 @@ public class ClientForSMMessageHandler {
                 query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_counter", machine_id);
                 logger.warn("[PRODUCT][22] Product not found found. Creating New and Updating Statistics. MailId=" + mail_id);
 
-                DatabaseHelper.runMultipleQuery(connection, query);
-                JSONArray queryCheckProductResultNew = DatabaseHelper.getSelectQueryResults(connection, queryCheckProduct);
+                HelperDatabase.runMultipleQuery(connection, query);
+                JSONArray queryCheckProductResultNew = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
 
                 if (queryCheckProductResultNew.length() > 0) {
                     productInfo = queryCheckProductResultNew.getJSONObject(0);
@@ -503,7 +497,7 @@ public class ClientForSMMessageHandler {
                 }
             }
             //sc code finished
-            DatabaseHelper.runMultipleQuery(connection, query);
+            HelperDatabase.runMultipleQuery(connection, query);
             logger.info("[PRODUCT][22] Product Updated. MailId=" + mail_id);
         }
         catch (Exception ex) {
@@ -514,7 +508,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_42(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject conveyorStates=DatabaseHelper.getConveyorStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject conveyorStates=HelperDatabase.getConveyorStates(connection,clientInfo.getInt("machine_id"));
         JSONObject conveyors= (JSONObject) ConfigurationHelper.dbBasicInfo.get("conveyors");
 
         byte[] stateDataBytes = Arrays.copyOfRange(dataBytes, 4, dataBytes.length);
@@ -537,7 +531,7 @@ public class ClientForSMMessageHandler {
             }
         }
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -545,7 +539,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_43(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject conveyorStates=DatabaseHelper.getConveyorStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject conveyorStates=HelperDatabase.getConveyorStates(connection,clientInfo.getInt("machine_id"));
         JSONObject conveyors= (JSONObject) ConfigurationHelper.dbBasicInfo.get("conveyors");
         int conveyor_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
@@ -566,7 +560,7 @@ public class ClientForSMMessageHandler {
 
         //System.out.println("Query: "+query);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -583,7 +577,7 @@ public class ClientForSMMessageHandler {
             if((sensorId == 1) && (sensorStatus == 1)) {
                 String query="";
                 String queryOldProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-                JSONArray previousProductInfo=DatabaseHelper.getSelectQueryResults(connection,queryOldProduct);
+                JSONArray previousProductInfo=HelperDatabase.getSelectQueryResults(connection,queryOldProduct);
                 if(previousProductInfo.length()>0){
                     long oldProductId=previousProductInfo.getJSONObject(0).getLong("id");
                     logger.info("[PRODUCT][44] Duplicate Product found. MailId="+mailId+" productId="+oldProductId);
@@ -618,7 +612,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_46(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject inductStates=DatabaseHelper.getInductStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject inductStates=HelperDatabase.getInductStates(connection,clientInfo.getInt("machine_id"));
         JSONObject inducts= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inducts");
 
 
@@ -642,7 +636,7 @@ public class ClientForSMMessageHandler {
             }
         }
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -650,7 +644,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_47(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject inductStates=DatabaseHelper.getInductStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject inductStates=HelperDatabase.getInductStates(connection,clientInfo.getInt("machine_id"));
         JSONObject inducts= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inducts");
         int induct_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
@@ -671,7 +665,7 @@ public class ClientForSMMessageHandler {
 
         //System.out.println("Query: "+query);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -689,7 +683,7 @@ public class ClientForSMMessageHandler {
             query+= format("UPDATE statistics_hourly SET %s=%s+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;",columnName,columnName,machineId);
             query+= format("UPDATE statistics_counter SET %s=%s+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;",columnName,columnName,machineId);
             try {
-                DatabaseHelper.runMultipleQuery(connection,query);
+                HelperDatabase.runMultipleQuery(connection,query);
             }
             catch (SQLException e) {
                 logger.error(HelperCommon.getStackTraceString(e));
@@ -716,7 +710,7 @@ public class ClientForSMMessageHandler {
         }
         query+=(String.join(", ", valuesList)+" ON DUPLICATE KEY UPDATE state=VALUES(state),updated_at=VALUES(updated_at)");
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -729,7 +723,7 @@ public class ClientForSMMessageHandler {
 
         String query = format("UPDATE parameters SET value=%d,`updated_at`=NOW() WHERE machine_id=%d AND param_id=%d;",value,machine_id,param_id);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
@@ -737,7 +731,7 @@ public class ClientForSMMessageHandler {
     }
     public static void handleMessage_55(Connection connection, ApeClient apeClient, byte[] dataBytes){
         int machine_id=apeClient.clientInfo.getInt("machine_id");
-        JSONObject parameterValues=DatabaseHelper.getParameterValues(connection,machine_id);
+        JSONObject parameterValues=HelperDatabase.getParameterValues(connection,machine_id);
         for(String key:parameterValues.keySet()){
             JSONObject row=parameterValues.getJSONObject(key);
             int paramId = row.getInt("param_id");
@@ -780,7 +774,7 @@ public class ClientForSMMessageHandler {
         query+=" updated_at=NOW()";
         query+=String.format(" WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", machine_id);
         try {
-            DatabaseHelper.runMultipleQuery(connection,query);
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         catch (SQLException e) {
             logger.error(HelperCommon.getStackTraceString(e));
