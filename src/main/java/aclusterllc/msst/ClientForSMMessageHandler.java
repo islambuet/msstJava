@@ -111,10 +111,10 @@ public class ClientForSMMessageHandler {
         return jsonAlarmsActive;
 
     }
-    /*public static void handleMessage_6_8_10_12_17_40(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
+    public static JSONObject handleMessage_6_8_10_12_17_40(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject binStates=HelperDatabase.getBinStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject bins= (JSONObject) ConfigurationHelper.dbBasicInfo.get("bins");
+        JSONObject binsStates=HelperDatabase.getBinsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject bins= (JSONObject) HelperConfiguration.dbBasicInfo.get("bins");
         String columName="pe_blocked";////messageId=6
         if(messageId==8){
             columName="partially_full";
@@ -136,39 +136,36 @@ public class ClientForSMMessageHandler {
         for(int i=0;i<bits.length;i++){
             int bin_id=(i+1);
             if(bins.has(machineId+"_"+bin_id)){
-                if(binStates.has(machineId+"_"+bin_id)){
-                    JSONObject binState= (JSONObject) binStates.get(machineId+"_"+bin_id);
-                    if(binState.getInt(columName)!=bits[i]){
-                        query+=format("UPDATE bin_states SET `%s`='%s', `updated_at`=now()  WHERE `id`=%d;",columName,bits[i],binState.getLong("id"));
+                if(binsStates.has(machineId+"_"+bin_id)){
+                    JSONObject binStates= (JSONObject) binsStates.get(machineId+"_"+bin_id);
+                    if(binStates.getInt(columName)!=bits[i]){
+                        query+=format("UPDATE bins_states SET `%s`='%s', `updated_at`=now()  WHERE `id`=%d;",columName,bits[i],binStates.getLong("id"));
                         String unChangedQuery="";
-                        for(String key:binState.keySet()){
+                        for(String key:binStates.keySet()){
                             if(!(key.equals("id")|| key.equals("updated_at")|| key.equals(columName)))
                             {
-                                unChangedQuery+=format("`%s`='%s',",key,binState.getInt(key));
+                                unChangedQuery+=format("`%s`='%s',",key,binStates.getInt(key));
                             }
                         }
-                        query+= format("INSERT INTO bin_states_history SET %s `%s`='%s', `updated_at`=now();",unChangedQuery,columName,bits[i]);
+                        query+= format("INSERT INTO bins_states_history SET %s `%s`='%s', `updated_at`=now();",unChangedQuery,columName,bits[i]);
                     }
                 }
                 else{
-                    query+= format("INSERT INTO bin_states (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,bits[i]);
-                    query+= format("INSERT INTO bin_states_history (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,bits[i]);
+                    query+= format("INSERT INTO bins_states (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,bits[i]);
+                    query+= format("INSERT INTO bins_states_history (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,bits[i]);
                 }
             }
 
         }
-        //System.out.println("Query: "+query);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return binsStates;
     }
-    public static void handleMessage_7_9_11_13_18_41(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
+    public static JSONObject handleMessage_7_9_11_13_18_41(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject binStates=HelperDatabase.getBinStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject bins= (JSONObject) ConfigurationHelper.dbBasicInfo.get("bins");
+        JSONObject binsStates=HelperDatabase.getBinsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject binStates=new JSONObject();
+        JSONObject bins= (JSONObject) HelperConfiguration.dbBasicInfo.get("bins");
+
         int bin_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
         String columName="pe_blocked";//messageId=7
@@ -189,34 +186,29 @@ public class ClientForSMMessageHandler {
         }
         String query="";
         if(bins.has(machineId+"_"+bin_id)){
-            if(binStates.has(machineId+"_"+bin_id)){
-                JSONObject binState= (JSONObject) binStates.get(machineId+"_"+bin_id);
-                if(binState.getInt(columName)!=state){
-                    query+=format("UPDATE bin_states SET `%s`='%s', `updated_at`=now()  WHERE `id`=%d;",columName,state,binState.getLong("id"));
+            if(binsStates.has(machineId+"_"+bin_id)){
+                binStates= (JSONObject) binsStates.get(machineId+"_"+bin_id);
+                if(binStates.getInt(columName)!=state){
+                    query+=format("UPDATE bins_states SET `%s`='%s', `updated_at`=now()  WHERE `id`=%d;",columName,state,binStates.getLong("id"));
                     String unChangedQuery="";
-                    for(String key:binState.keySet()){
+                    for(String key:binStates.keySet()){
                         if(!(key.equals("id")|| key.equals("updated_at")|| key.equals(columName)))
                         {
-                            unChangedQuery+=format("`%s`='%s',",key,binState.getInt(key));
+                            unChangedQuery+=format("`%s`='%s',",key,binStates.getInt(key));
                         }
                     }
-                    query+= format("INSERT INTO bin_states_history SET %s `%s`='%s', `updated_at`=now();",unChangedQuery,columName,state);
+                    query+= format("INSERT INTO bins_states_history SET %s `%s`='%s', `updated_at`=now();",unChangedQuery,columName,state);
                 }
             }
             else{
-                query+= format("INSERT INTO bin_states (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,state);
-                query+= format("INSERT INTO bin_states_history (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,state);
+                query+= format("INSERT INTO bins_states (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,state);
+                query+= format("INSERT INTO bins_states_history (`machine_id`, `bin_id`,`%s`) VALUES (%d,%d,%d);",columName,machineId,bin_id,state);
             }
         }
-        //System.out.println("Query: "+query);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return binStates;
     }
-    public static void handleMessage_14(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_14(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         JSONObject devices= (JSONObject) ConfigurationHelper.dbBasicInfo.get("devices");
         JSONObject deviceStates=HelperDatabase.getDeviceStates(connection,machineId);

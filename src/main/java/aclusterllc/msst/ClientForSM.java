@@ -286,22 +286,22 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					case 5:
 						jsonInfo.put("alarmsActivePrevious",ClientForSMMessageHandler.handleMessage_4_5(connection,clientInfo,dataBytes,messageId));
 						break;
-	//				case 6:
-	//				case 8:
-	//				case 10:
-	//				case 12:
-	//				case 17:
-	//				case 40:
-	//					ClientForSMMessageHandler.handleMessage_6_8_10_12_17_40(connection,clientInfo,dataBytes,messageId);
-	//					break;
-	//				case 7:
-	//				case 9:
-	//				case 11:
-	//				case 13:
-	//				case 18:
-	//				case 41:
-	//					ClientForSMMessageHandler.handleMessage_7_9_11_13_18_41(connection,clientInfo,dataBytes,messageId);
-	//					break;
+					case 6:
+					case 8:
+					case 10:
+					case 12:
+					case 17:
+					case 40:
+						jsonInfo.put("binsStatesPrevious",ClientForSMMessageHandler.handleMessage_6_8_10_12_17_40(connection,clientInfo,dataBytes,messageId));
+						break;
+					case 7:
+					case 9:
+					case 11:
+					case 13:
+					case 18:
+					case 41:
+						jsonInfo.put("binStatesPrevious",ClientForSMMessageHandler.handleMessage_7_9_11_13_18_41(connection,clientInfo,dataBytes,messageId));
+						break;
 	//				case 14:
 	//					ClientForSMMessageHandler.handleMessage_14(connection,clientInfo,dataBytes);
 	//					break;
