@@ -37,7 +37,7 @@ public class Main {
         for (String key : machines.keySet()) {
             ClientForSM clientForSM=new ClientForSM((JSONObject) machines.get(key),clientForSMMessageQueueHandler);
             //clientForSM.addApeMessageObserver(mainGui);
-            //serverForHmi.addObserverHmiMessage(clientForSM);
+            serverForHmi.addObserverHmiMessage(clientForSM);
             clientForSM.start();
         }
 

@@ -84,6 +84,10 @@ public class HelperDatabase {
         String query = String.format("SELECT *,UNIX_TIMESTAMP(date_active) AS date_active_timestamp FROM alarms_active WHERE machine_id=%d ORDER BY id DESC", machineId);
         return getSelectQueryResults(connection,query);
     }
+    public static JSONObject getInputsStates(Connection connection,int machineId) throws SQLException {
+        String query = String.format("SELECT * FROM inputs_states WHERE machine_id=%d", machineId);
+        return getSelectQueryResults(connection,query,new String[] { "machine_id", "input_id"});
+    }
     public static int getMachineMode(Connection connection,int machineId) throws SQLException{
         String query = String.format("SELECT machine_mode FROM machines WHERE machine_id=%d", machineId);
         JSONArray modeResult=getSelectQueryResults(connection,query);

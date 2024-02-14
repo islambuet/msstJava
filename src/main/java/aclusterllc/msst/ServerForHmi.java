@@ -29,7 +29,7 @@ public class ServerForHmi implements Runnable {
 
     ConcurrentHashMap<SocketChannel, ConnectedHmiClient> connectedHmiClientList = new ConcurrentHashMap<>();
     Logger logger = LoggerFactory.getLogger(ServerForHmi.class);
-    final List<ObserverHmiMessage> hmiMessageObservers = new ArrayList<>();
+    final List<ObserverHmiMessage> observersHmiMessage = new ArrayList<>();
     public ServerForHmi() {
     }
     public void start(){
@@ -194,6 +194,7 @@ public class ServerForHmi implements Runnable {
                 JSONArray requestData = jsonObject.getJSONArray("requestData");
                 response.put("request",request);
                 response.put("params",params);
+                response.put("data", new JSONObject());//initialize empty
                 int machine_id=0;
                 if(params.has("machine_id")){machine_id=params.getInt("machine_id");}
                 if(requestData.length()>0){
@@ -284,7 +285,7 @@ public class ServerForHmi implements Runnable {
                         }
                     }
                 }
-                notifyToHmiMessageObservers(jsonObject,response.getJSONObject("data"));
+                notifyObserversHmiMessage(jsonObject,response.getJSONObject("data"));//TODO no need for every message. optimize
             }
             catch (Exception ex){
                 logger.error(HelperCommon.getStackTraceString(ex));
@@ -329,12 +330,12 @@ public class ServerForHmi implements Runnable {
             this.disconnectConnectedHmiClient(key);
         }
     }
-    public void addObserverHmiMessage(ObserverHmiMessage hmiMessageObserver){
-        hmiMessageObservers.add(hmiMessageObserver);
+    public void addObserverHmiMessage(ObserverHmiMessage observerHmiMessage){
+        observersHmiMessage.add(observerHmiMessage);
     }
-    public void notifyToHmiMessageObservers(JSONObject jsonMessage,JSONObject info){
-        for(ObserverHmiMessage hmiMessageObserver:hmiMessageObservers){
-            hmiMessageObserver.processHmiMessage(jsonMessage,info);
+    public void notifyObserversHmiMessage(JSONObject jsonMessage,JSONObject info){
+        for(ObserverHmiMessage observerHmiMessage:observersHmiMessage){
+            observerHmiMessage.processHmiMessage(jsonMessage,info);
         }
     }
 }

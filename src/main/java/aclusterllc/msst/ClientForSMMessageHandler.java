@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -27,67 +28,59 @@ public class ClientForSMMessageHandler {
             stmt.execute(sql);
             stmt.close();
     }
-    /*public static void handleMessage_2(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException{
-        JSONObject inputsInfo= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inputs");
+    public static void handleMessage_2(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
+        JSONObject inputsInfo= (JSONObject) HelperConfiguration.dbBasicInfo.get("inputs");
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
+
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject inputsCurrentState=DatabaseHelper.getInputStates(connection,machineId);
+        JSONObject inputsCurrentState=HelperDatabase.getInputsStates(connection,machineId);
+        System.out.println(bits[7]+" "+bits[8]);
         String query="";
         for(int i=0;i<bits.length;i++){
             boolean insertHistory=false;
             if(inputsCurrentState.has(machineId+"_"+(i+1))){
                 JSONObject inputState= (JSONObject) inputsCurrentState.get(machineId+"_"+(i+1));
                 if(inputState.getInt("state")!=bits[i]){
-                    query+= format("UPDATE input_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],inputState.getLong("id"));
+                    query+= format("UPDATE inputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],inputState.getLong("id"));
                     insertHistory=true;
                 }
             }
             else{
-                query+= format("INSERT INTO input_states (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+                query+= format("INSERT INTO inputs_states (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
                 insertHistory=true;
             }
             if(insertHistory && (inputsInfo.has(machineId+"_"+(i+1))) && (((JSONObject)inputsInfo.get(machineId+"_"+(i+1))).getInt("enable_history")==1)){
-                    query+= format("INSERT INTO input_states_history (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+                    query+= format("INSERT INTO inputs_states_history (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
             }
         }
-        try {
-            DatabaseHelper.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
 
     }
-    public static void handleMessage_3(Connection connection, JSONObject clientInfo, byte[] dataBytes){
-        JSONObject inputsInfo= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inputs");
+    public static void handleMessage_3(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
+        JSONObject inputsInfo= (JSONObject) HelperConfiguration.dbBasicInfo.get("inputs");
         int machineId=clientInfo.getInt("machine_id");
-        int inputId = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
+        int inputId = HelperCommon.bytesToInt(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
-        try {
-            Statement stmt = connection.createStatement();
-            String query = String.format("SELECT id,state FROM input_states WHERE machine_id=%d AND input_id=%d", machineId,inputId);
-            ResultSet rs = stmt.executeQuery(query);
-            if (rs.next())
-            {
-                if(rs.getInt("state")!=state){
-                    String query2= format("UPDATE input_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",state,rs.getLong("id"));
-                    if((inputsInfo.has(machineId+"_"+inputId)) && (((JSONObject)inputsInfo.get(machineId+"_"+inputId)).getInt("enable_history")==1)){
-                        query2+= format("INSERT INTO input_states_history (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,inputId,state);
-                    }
-                    Statement stmt2 = connection.createStatement();
-                    stmt2.execute(query2);
-                    stmt2.close();
-
+        Statement stmt = connection.createStatement();
+        String query = String.format("SELECT id,state FROM inputs_states WHERE machine_id=%d AND input_id=%d", machineId,inputId);
+        ResultSet rs = stmt.executeQuery(query);
+        if (rs.next())
+        {
+            if(rs.getInt("state")!=state){
+                String query2= format("UPDATE inputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",state,rs.getLong("id"));
+                if((inputsInfo.has(machineId+"_"+inputId)) && (((JSONObject)inputsInfo.get(machineId+"_"+inputId)).getInt("enable_history")==1)){
+                    query2+= format("INSERT INTO inputs_states_history (`machine_id`, `input_id`,`state`) VALUES (%d,%d,%d);",machineId,inputId,state);
                 }
+                Statement stmt2 = connection.createStatement();
+                stmt2.execute(query2);
+                stmt2.close();
             }
-            rs.close();
-            stmt.close();
         }
-        catch (Exception e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        rs.close();
+        stmt.close();
+
     }
-    public static void handleMessage_4_5(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
+    /*public static void handleMessage_4_5(Connection connection, JSONObject clientInfo, byte[] dataBytes,int messageId){
         int machineId=clientInfo.getInt("machine_id");
         JSONArray activeAlarms= DatabaseHelper.getActiveAlarms(connection,machineId);
         JSONObject jsonActiveAlarms=new JSONObject();

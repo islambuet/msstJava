@@ -22,7 +22,7 @@ import static java.lang.String.format;
 import static java.lang.Thread.sleep;
 
 
-public class ClientForSM implements Runnable {
+public class ClientForSM implements Runnable, ObserverHmiMessage {
 	Logger logger = LoggerFactory.getLogger(ClientForSM.class);
 	JSONObject clientInfo;
 	ClientForSMMessageQueueHandler clientForSMMessageQueueHandler;
@@ -276,12 +276,12 @@ public class ClientForSM implements Runnable {
 				case 1:
 					ClientForSMMessageHandler.handleMessage_1(connection,clientInfo,dataBytes);
 					break;
-//				case 2:
-//					ClientForSMMessageHandler.handleMessage_2(connection,clientInfo,dataBytes);
-//					break;
-//				case 3:
-//					ClientForSMMessageHandler.handleMessage_3(connection,clientInfo,dataBytes);
-//					break;
+				case 2:
+					ClientForSMMessageHandler.handleMessage_2(connection,clientInfo,dataBytes);
+					break;
+				case 3:
+					ClientForSMMessageHandler.handleMessage_3(connection,clientInfo,dataBytes);
+					break;
 //				case 4:
 //				case 5:
 //					ClientForSMMessageHandler.handleMessage_4_5(connection,clientInfo,dataBytes,messageId);
@@ -434,66 +434,9 @@ public class ClientForSM implements Runnable {
 }
 //
 //	@Override
-//	public void processHmiMessage(JSONObject jsonMessage, JSONObject info) {
-//		try {
-//			String request = jsonMessage.getString("request");
-//			JSONObject params = jsonMessage.getJSONObject("params");
-//			int machine_id=0;
-//			if(params.has("machine_id")){machine_id=params.getInt("machine_id");}
-//			if (request.equals("forward_ape_message")) {
-//				if(machine_id==clientInfo.getInt("machine_id")){
-//					int message_id = Integer.parseInt(params.get("message_id").toString());
-//					byte[] messageBytes;
-//					switch(message_id) {
-//						case 115: {
-//							int param_id = Integer.parseInt(params.get("param_id").toString());
-//							int value = Integer.parseInt(params.get("value").toString());
-//							messageBytes = new byte[]{
-//									0, 0, 0, 115, 0, 0, 0, 20, 0, 0, 0, 0,
-//									(byte) (param_id >> 24), (byte) (param_id >> 16), (byte) (param_id >> 8), (byte) (param_id),
-//									(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) (value)
-//							};
-//							sendBytes(messageBytes);
-//							break;
-//						}
-//						case 120:{
-//							int mode = Integer.parseInt(params.get("mode").toString());
-//							messageBytes = new byte[]{
-//									0, 0, 0, 120, 0, 0, 0, 9, (byte) mode
-//							};
-//							sendBytes(messageBytes);
-//							break;
-//						}
-//						case 123:{
-//							int device_id = Integer.parseInt(params.get("device_id").toString());
-//							int command = Integer.parseInt(params.get("command").toString());
-//							int parameter1 = Integer.parseInt(params.get("parameter1").toString());
-//							if(device_id==86 && command ==0){
-//								//FOR all machine or current machine
-//								Connection connection=ConfigurationHelper.getConnection();
-//								String query= format("INSERT INTO statistics_counter (`machine_id`) VALUES (%d);",machine_id);
-//								query+= format("INSERT INTO statistics_oee (`machine_id`) VALUES (%d);",machine_id);
-//								query+=format("INSERT INTO statistics_bins_counter (machine_id,bin_id) SELECT DISTINCT machine_id,bin_id FROM bins WHERE machine_id=%d;",machine_id);
-//								DatabaseHelper.runMultipleQuery(connection,query);
-//								connection.close();
-//							}
-//							messageBytes= new byte[]{
-//									0, 0, 0, 123, 0, 0, 0, 20,
-//									(byte) (device_id >> 24),(byte) (device_id >> 16),(byte) (device_id >> 8),(byte) (device_id),
-//									(byte) (command >> 24),(byte) (command >> 16),(byte) (command >> 8),(byte) (command),
-//									(byte) (parameter1 >> 24),(byte) (parameter1 >> 16),(byte) (parameter1 >> 8),(byte) (parameter1)
-//							};
-//							sendBytes(messageBytes);
-//							break;
-//						}
-//
-//
-//					}
-//				}
-//			}
-//		}
-//		catch (Exception ex){
-//			logger.error(CommonHelper.getStackTraceString(ex));
-//		}
-//	}
+	public void processHmiMessage(JSONObject jsonMessage, JSONObject info) {
+		System.out.println("processHmiMessage");
+		System.out.println(jsonMessage);
+		System.out.println(info);
+	}
 }
