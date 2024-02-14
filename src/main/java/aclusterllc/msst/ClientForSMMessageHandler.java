@@ -19,14 +19,9 @@ import static java.lang.String.format;
 
 public class ClientForSMMessageHandler {
 
-    public static void handleMessage_1(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException{
-            Statement stmt = connection.createStatement();
-            String sql = format("UPDATE machines SET `machine_state`=%d, `machine_mode`=%d, `updated_at`=now()  WHERE `machine_id`=%d LIMIT 1",
-                    dataBytes[0],
-                    dataBytes[1],
-                    clientInfo.getInt("machine_id"));
-            stmt.execute(sql);
-            stmt.close();
+    public static int handleMessage_1(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException{
+        String updateQuery = format("UPDATE machines SET `machine_state`=%d, `machine_mode`=%d, `updated_at`=now()  WHERE `machine_id`=%d LIMIT 1",dataBytes[0],dataBytes[1],clientInfo.getInt("machine_id"));
+        return HelperDatabase.runUpdateQuery(connection,updateQuery);
     }
     public static void handleMessage_2(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject inputsInfo= (JSONObject) HelperConfiguration.dbBasicInfo.get("inputs");
