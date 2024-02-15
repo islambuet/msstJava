@@ -18,7 +18,7 @@ import java.util.List;
 import static java.lang.String.format;
 
 public class ClientForSMMessageHandler {
-
+    static Logger logger = LoggerFactory.getLogger(ClientForSM.class);
     public static int handleMessage_1(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException{
         String updateQuery = format("UPDATE machines SET `machine_state`=%d, `machine_mode`=%d, `updated_at`=now()  WHERE `machine_id`=%d LIMIT 1",dataBytes[0],dataBytes[1],clientInfo.getInt("machine_id"));
         return HelperDatabase.runUpdateQuery(connection,updateQuery);
@@ -255,245 +255,226 @@ public class ClientForSMMessageHandler {
         return deviceState;
 
     }
-    /*public static JSONObject handleMessage_20(Connection connection, JSONObject clientInfo, byte[] dataBytes){
-
+    public static JSONObject handleMessage_20(Connection connection, JSONObject clientInfo, byte[] dataBytes)  throws SQLException{
         JSONObject productInfo=new JSONObject();
-        try {
-            int machineId=clientInfo.getInt("machine_id");
-            long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
-            int length = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));
-            int width = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 8, 12));
-            int height = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 12, 16));
-            int weight = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 16, 20));
-            int reject_code=dataBytes[20];
-            String queryCheckProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-            JSONArray queryCheckProductResult=HelperDatabase.getSelectQueryResults(connection,queryCheckProduct);
-            if(queryCheckProductResult.length()>0){
-                productInfo=queryCheckProductResult.getJSONObject(0);
-                productInfo.put("length",length);
-                productInfo.put("width",width);
-                productInfo.put("height",height);
-                productInfo.put("weight",length);
-                productInfo.put("reject_code",reject_code);
-                String query =format("UPDATE products SET length=%d, width=%d, height=%d, weight=%d, reject_code=%d, dimension_at=NOW() WHERE id=%d;",
-                         length, width, height, weight, reject_code, productInfo.getLong("id"));
+        int machineId=clientInfo.getInt("machine_id");
+        long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
+        int length = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));
+        int width = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 8, 12));
+        int height = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 12, 16));
+        int weight = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 16, 20));
+        int reject_code=dataBytes[20];
+        String queryCheckProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
+        JSONArray queryCheckProductResult=HelperDatabase.getSelectQueryResults(connection,queryCheckProduct);
+        if(queryCheckProductResult.length()>0){
+            productInfo=queryCheckProductResult.getJSONObject(0);
+            productInfo.put("length",length);
+            productInfo.put("width",width);
+            productInfo.put("height",height);
+            productInfo.put("weight",length);
+            productInfo.put("reject_code",reject_code);
+            String query =format("UPDATE products SET length=%d, width=%d, height=%d, weight=%d, reject_code=%d, dimension_at=NOW() WHERE id=%d;",
+                     length, width, height, weight, reject_code, productInfo.getLong("id"));
 
-                HelperDatabase.runMultipleQuery(connection,query);
-                logger.info("[PRODUCT][20] Product Updated. MailId=" + mailId);
-            }
-            else{
-                logger.error("[PRODUCT][20] Product not found found. MailId="+mailId);
-            }
+            HelperDatabase.runMultipleQuery(connection,query);
+            logger.info("[PRODUCT][20] Product Updated. MailId=" + mailId);
         }
-        catch (SQLException e) {
-            logger.error("[PRODUCT][20] "+HelperCommon.getStackTraceString(e));
-            productInfo=new JSONObject();//removing info for unSuccess
+        else{
+            logger.error("[PRODUCT][20] Product not found found. MailId="+mailId);
         }
         return productInfo;
     }
-    public static JSONObject handleMessage_21(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_21(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject productInfo = new JSONObject();
-        try {
-            int machineId = clientInfo.getInt("machine_id");
-            long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
-            int number_of_results = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 6));
 
-            String queryBarcode = "";
-            int bytePos = 6;
-            JSONObject barCodeInfo = new JSONObject();
-            for (int i = 1; (i < 4) && (i <= number_of_results); i++) {
-                barCodeInfo.put("barcode" + i + "_type", dataBytes[bytePos]);
-                queryBarcode += format("`barcode%s_type`='%s',", i, dataBytes[bytePos]);
-                bytePos++;
-                int barcodeLength = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, bytePos, bytePos + 2));
-                bytePos += 2;
-                String barcode = new String(Arrays.copyOfRange(dataBytes, bytePos, bytePos + barcodeLength), StandardCharsets.UTF_8);
-                //barcode = barcode.replaceAll("\\P{Print}", "");
-                barCodeInfo.put("barcode" + i + "_string", barcode);
-                queryBarcode += format("`barcode%s_string`='%s',", i, barcode);
-                bytePos += barcodeLength;
-            }
-            int valid_read = 1, no_read = 0, multiple_read = 0, no_code = 0;//if number_of_results=1
-            if (number_of_results == 1) {
-                String barcode1_string = barCodeInfo.getString("barcode1_string");
-                switch (barcode1_string) {
-                    case "??????????":
-                        no_read = 1;
-                        valid_read = 0;
-                        break;
-                    case "9999999999":
-                        multiple_read = 1;
-                        valid_read = 0;
-                        break;
-                    case "0000000000":
-                        no_code = 1;
-                        valid_read = 0;
-                        break;
-                }
-            }
-            else {
-                valid_read = 0;
-                if (number_of_results == 0) {
-                    no_code = 1;
-                } else {
+        int machineId = clientInfo.getInt("machine_id");
+        long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
+        int number_of_results = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 6));
+
+        String queryBarcode = "";
+        int bytePos = 6;
+        JSONObject barCodeInfo = new JSONObject();
+        for (int i = 1; (i < 4) && (i <= number_of_results); i++) {
+            barCodeInfo.put("barcode" + i + "_type", dataBytes[bytePos]);
+            queryBarcode += format("`barcode%s_type`='%s',", i, dataBytes[bytePos]);
+            bytePos++;
+            int barcodeLength = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, bytePos, bytePos + 2));
+            bytePos += 2;
+            String barcode = new String(Arrays.copyOfRange(dataBytes, bytePos, bytePos + barcodeLength), StandardCharsets.UTF_8);
+            //barcode = barcode.replaceAll("\\P{Print}", "");
+            barCodeInfo.put("barcode" + i + "_string", barcode);
+            queryBarcode += format("`barcode%s_string`='%s',", i, barcode);
+            bytePos += barcodeLength;
+        }
+        int valid_read = 1, no_read = 0, multiple_read = 0, no_code = 0;//if number_of_results=1
+        if (number_of_results == 1) {
+            String barcode1_string = barCodeInfo.getString("barcode1_string");
+            switch (barcode1_string) {
+                case "??????????":
+                    no_read = 1;
+                    valid_read = 0;
+                    break;
+                case "9999999999":
                     multiple_read = 1;
-                }
-            }
-            String query = "";
-            String queryCreateNew = "";
-            String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-            JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
-
-            if (queryCheckProductResult.length() > 0) {
-                productInfo = queryCheckProductResult.getJSONObject(0);
-                query += format("UPDATE products SET %s`number_of_results`='%s', `barcode_at`=now()  WHERE `id`=%d;", queryBarcode, number_of_results, productInfo.getLong("id"));
-            }
-            else {
-                productInfo.put("mail_id", mailId);
-                productInfo.put("machine_id", machineId);
-                queryCreateNew += format("INSERT INTO products SET %s`number_of_results`='%s',`machine_id`='%s',`mail_id`='%s', `barcode_at`=now();"
-                        , queryBarcode, number_of_results, machineId, mailId);
-                logger.warn("[PRODUCT][21] Product not found found. Creating New. MailId=" + mailId);
-            }
-            query += format("UPDATE statistics SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
-            query += format("UPDATE statistics_minutely SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
-            query += format("UPDATE statistics_hourly SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
-            query += format("UPDATE statistics_counter SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
-
-            connection.setAutoCommit(false);
-            Statement stmt = connection.createStatement();
-            if (queryCreateNew.length() > 0) {
-                stmt.executeUpdate(queryCreateNew, Statement.RETURN_GENERATED_KEYS);
-                ResultSet rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    productInfo.put("id", rs.getLong(1));
-                }
-                rs.close();
-            }
-            stmt.execute(query);
-            connection.commit();
-            connection.setAutoCommit(true);
-            stmt.close();
-            logger.info("[PRODUCT][21] Product Updated. MailId=" + mailId);
-
-            productInfo.put("number_of_results", number_of_results);
-            for (String key : barCodeInfo.keySet()) {
-                productInfo.put(key, barCodeInfo.get(key));
+                    valid_read = 0;
+                    break;
+                case "0000000000":
+                    no_code = 1;
+                    valid_read = 0;
+                    break;
             }
         }
-        catch (Exception ex) {
-            logger.error("[PRODUCT][21] " + HelperCommon.getStackTraceString(ex));
-            productInfo=new JSONObject();
+        else {
+            valid_read = 0;
+            if (number_of_results == 0) {
+                no_code = 1;
+            } else {
+                multiple_read = 1;
+            }
+        }
+        String query = "";
+        String queryCreateNew = "";
+        String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
+        JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
+
+        if (queryCheckProductResult.length() > 0) {
+            productInfo = queryCheckProductResult.getJSONObject(0);
+            query += format("UPDATE products SET %s`number_of_results`='%s', `barcode_at`=now()  WHERE `id`=%d;", queryBarcode, number_of_results, productInfo.getLong("id"));
+        }
+        else {
+            productInfo.put("mail_id", mailId);
+            productInfo.put("machine_id", machineId);
+            queryCreateNew += format("INSERT INTO products SET %s`number_of_results`='%s',`machine_id`='%s',`mail_id`='%s', `barcode_at`=now();", queryBarcode, number_of_results, machineId, mailId);
+            logger.warn("[PRODUCT][21] Product not found found. Creating New. MailId=" + mailId);
+        }
+        query += format("UPDATE statistics SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
+        query += format("UPDATE statistics_minutely SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
+        query += format("UPDATE statistics_hourly SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
+        query += format("UPDATE statistics_counter SET total_read=total_read+1, no_read=no_read+%d, no_code=no_code+%d, multiple_read=multiple_read+%d, valid=valid+%d WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", no_read, no_code, multiple_read, valid_read, machineId);
+
+        connection.setAutoCommit(false);
+        Statement stmt = connection.createStatement();
+        if (queryCreateNew.length() > 0) {
+            stmt.executeUpdate(queryCreateNew, Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                productInfo.put("id", rs.getLong(1));
+            }
+            rs.close();
+        }
+        stmt.execute(query);
+        connection.commit();
+        connection.setAutoCommit(true);
+        stmt.close();
+        logger.info("[PRODUCT][21] Product Updated. MailId=" + mailId);
+
+        productInfo.put("number_of_results", number_of_results);
+        for (String key : barCodeInfo.keySet()) {
+            productInfo.put(key, barCodeInfo.get(key));
         }
         return productInfo;
     }
-    public static JSONObject handleMessage_22(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_22(Connection connection, JSONObject clientInfo, byte[] dataBytes)  throws SQLException {
         JSONObject productInfo=new JSONObject();
-        try {
+        int machine_id = clientInfo.getInt("machine_id");
+        long mail_id = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
+        int destination = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 6));
+        int destination_alternate = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 6, 8));
+        int destination_final = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 8, 10));
+        int reason = dataBytes[10];
 
-            int machine_id = clientInfo.getInt("machine_id");
-            long mail_id = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
-            int destination = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 6));
-            int destination_alternate = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 6, 8));
-            int destination_final = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 8, 10));
-            int reason = dataBytes[10];
+        String query = "";
+        String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machine_id, mail_id);
+        JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
 
-            String query = "";
-            String queryCheckProduct = format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machine_id, mail_id);
-            JSONArray queryCheckProductResult = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
+        if (queryCheckProductResult.length() > 0) {
+            productInfo = queryCheckProductResult.getJSONObject(0);
+        }
+        else {
+            query = format("INSERT INTO products (`machine_id`, `mail_id`) VALUES (%d, %d);", machine_id, mail_id);
+            query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics", machine_id);
+            query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_hourly", machine_id);
+            query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_minutely", machine_id);
+            query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_counter", machine_id);
+            logger.warn("[PRODUCT][22] Product not found found. Creating New and Updating Statistics. MailId=" + mail_id);
 
-            if (queryCheckProductResult.length() > 0) {
-                productInfo = queryCheckProductResult.getJSONObject(0);
+            HelperDatabase.runMultipleQuery(connection, query);
+            JSONArray queryCheckProductResultNew = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
+
+            if (queryCheckProductResultNew.length() > 0) {
+                productInfo = queryCheckProductResultNew.getJSONObject(0);
+            } else {
+                logger.error("[PRODUCT][22] Failed to create new Product.MailId=" + mail_id);
+                return new JSONObject();
             }
-            else {
-                query = format("INSERT INTO products (`machine_id`, `mail_id`) VALUES (%d, %d);", machine_id, mail_id);
-                query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics", machine_id);
-                query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_hourly", machine_id);
-                query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_minutely", machine_id);
-                query += format("UPDATE %s SET total_read=total_read+1,no_code=no_code+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_counter", machine_id);
-                logger.warn("[PRODUCT][22] Product not found found. Creating New and Updating Statistics. MailId=" + mail_id);
 
-                HelperDatabase.runMultipleQuery(connection, query);
-                JSONArray queryCheckProductResultNew = HelperDatabase.getSelectQueryResults(connection, queryCheckProduct);
+        }
+        //Process confirm
+        productInfo.put("destination", destination);
+        productInfo.put("destination_alternate", destination_alternate);
+        productInfo.put("destination_final", destination_final);
+        productInfo.put("reason", reason);
+        String valueFromProductsQuery = "";
+        for (String key : productInfo.keySet()) {
+            valueFromProductsQuery += format("`%s`='%s',", key.equals("id") ? "product_id" : key, productInfo.get(key));
+        }
+        query = format("INSERT INTO products_history SET %s `confirmed_at`=now();", valueFromProductsQuery);
+        query += format("DELETE FROM products WHERE id=%d;", productInfo.getLong("id"));
 
-                if (queryCheckProductResultNew.length() > 0) {
-                    productInfo = queryCheckProductResultNew.getJSONObject(0);
-                } else {
-                    logger.error("[PRODUCT][22] Failed to create new Product.MailId=" + mail_id);
-                    return new JSONObject();
+        //process short codes
+        JSONObject destBin = null;
+        JSONObject destFinalBin = null;
+        JSONObject bins = HelperConfiguration.dbBasicInfo.getJSONObject("bins");
+        for (String key : bins.keySet()) {
+            JSONObject bin = bins.getJSONObject(key);
+            if (bin.getInt("sort_manager_id") == destination) {
+                destBin = bin;
+            }
+            if (bin.getInt("sort_manager_id") == destination_final) {
+                destFinalBin = bin;
+            }
+        }
+        if (destBin != null && destFinalBin != null) {
+            List<Integer> possibleReasons = new ArrayList<>(Arrays.asList(0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 17, 18, 21));
+            if (possibleReasons.contains(reason)) {
+                String scColumn = "sc" + reason;
+                String recircUpdate = "";
+                String rejectUpdate = "";
+
+                //statistics
+                if (destFinalBin.getInt("recirc_bin") == 1) {
+                    recircUpdate = " ,recirc=recirc+1";
+                } else if (destFinalBin.getInt("reject_bin") == 1) {
+                    rejectUpdate = " ,reject=reject+1";
+                }
+
+                query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
+                query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_counter", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
+                query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_hourly", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
+                query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_minutely", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
+
+                //bin statistics
+                //update short code for all condition destFinalBin
+                {
+                    query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
+                    query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_counter", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
+                    query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_hourly", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
+                }
+                if ((destBin.getInt("reject_bin") != 1) && (destBin != destFinalBin)) {
+                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
+                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_counter", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
+                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_hourly", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
                 }
 
             }
-            //Process confirm
-            productInfo.put("destination", destination);
-            productInfo.put("destination_alternate", destination_alternate);
-            productInfo.put("destination_final", destination_final);
-            productInfo.put("reason", reason);
-            String valueFromProductsQuery = "";
-            for (String key : productInfo.keySet()) {
-                valueFromProductsQuery += format("`%s`='%s',", key.equals("id") ? "product_id" : key, productInfo.get(key));
-            }
-            query = format("INSERT INTO products_history SET %s `confirmed_at`=now();", valueFromProductsQuery);
-            query += format("DELETE FROM products WHERE id=%d;", productInfo.getLong("id"));
-
-            //process short codes
-            JSONObject destBin = null;
-            JSONObject destFinalBin = null;
-            JSONObject bins = ConfigurationHelper.dbBasicInfo.getJSONObject("bins");
-            for (String key : bins.keySet()) {
-                JSONObject bin = bins.getJSONObject(key);
-                if (bin.getInt("sort_manager_id") == destination) {
-                    destBin = bin;
-                }
-                if (bin.getInt("sort_manager_id") == destination_final) {
-                    destFinalBin = bin;
-                }
-            }
-            if (destBin != null && destFinalBin != null) {
-                List<Integer> possibleReasons = new ArrayList<>(Arrays.asList(0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 17, 18, 21));
-                if (possibleReasons.contains(reason)) {
-                    String scColumn = "sc" + reason;
-                    String recircUpdate = "";
-                    String rejectUpdate = "";
-
-                    //statistics
-                    if (destFinalBin.getInt("recirc_bin") == 1) {
-                        recircUpdate = " ,recirc=recirc+1";
-                    } else if (destFinalBin.getInt("reject_bin") == 1) {
-                        rejectUpdate = " ,reject=reject+1";
-                    }
-
-                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
-                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_counter", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
-                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_hourly", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
-                    query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", "statistics_minutely", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id);
-
-                    //bin statistics
-                    //update short code for all condition destFinalBin
-                    {
-                        query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
-                        query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_counter", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
-                        query += format("UPDATE %s SET %s=%s+1 WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_hourly", scColumn, scColumn, machine_id, destFinalBin.getInt("bin_id"));
-                    }
-                    if ((destBin.getInt("reject_bin") != 1) && (destBin != destFinalBin)) {
-                        query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
-                        query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_counter", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
-                        query += format("UPDATE %s SET %s=%s+1%s%s WHERE machine_id=%d AND bin_id=%d ORDER BY id DESC LIMIT 1;", "statistics_bins_hourly", scColumn, scColumn, recircUpdate, rejectUpdate, machine_id, destBin.getInt("bin_id"));
-                    }
-
-                }
-            }
+        }
             //sc code finished
             HelperDatabase.runMultipleQuery(connection, query);
             logger.info("[PRODUCT][22] Product Updated. MailId=" + mail_id);
-        }
-        catch (Exception ex) {
-            logger.error("[PRODUCT][22] " + HelperCommon.getStackTraceString(ex));
-            productInfo=new JSONObject();
-        }
+
         return productInfo;
     }
-    public static void handleMessage_42(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_42(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         JSONObject conveyorStates=HelperDatabase.getConveyorStates(connection,clientInfo.getInt("machine_id"));
         JSONObject conveyors= (JSONObject) ConfigurationHelper.dbBasicInfo.get("conveyors");
