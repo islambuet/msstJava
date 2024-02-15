@@ -320,10 +320,9 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					case 43:
 						jsonInfo.put("conveyorStatePrevious",ClientForSMMessageHandler.handleMessage_43(connection,clientInfo,dataBytes));
 						break;
-
-	//				case 44:
-	//					info=ClientForSMMessageHandler.handleMessage_44(connection,clientInfo,dataBytes);
-	//					break;
+					case 44:
+						jsonInfo.put("productInfo",ClientForSMMessageHandler.handleMessage_44(connection,clientInfo,dataBytes));
+						break;
 	//				case 45:
 	//					//nothing doing. Receiving only event Id TODO For 360
 	//					break;

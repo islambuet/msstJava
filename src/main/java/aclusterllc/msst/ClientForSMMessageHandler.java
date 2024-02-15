@@ -527,51 +527,46 @@ public class ClientForSMMessageHandler {
         return conveyorState;
 
     }
-    /*public static JSONObject handleMessage_44(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_44(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject productInfo=new JSONObject();
-        try {
-            int machineId=clientInfo.getInt("machine_id");
-            long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
-            long sensorId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));
-            int sensorStatus=dataBytes[8];
-            logger.info("[PRODUCT][44] sensorId= "+sensorId+". sensorStatus="+sensorStatus+". MailId="+mailId);
-            if((sensorId == 1) && (sensorStatus == 1)) {
-                String query="";
-                String queryOldProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
-                JSONArray previousProductInfo=HelperDatabase.getSelectQueryResults(connection,queryOldProduct);
-                if(previousProductInfo.length()>0){
-                    long oldProductId=previousProductInfo.getJSONObject(0).getLong("id");
-                    logger.info("[PRODUCT][44] Duplicate Product found. MailId="+mailId+" productId="+oldProductId);
-                    query+=format("INSERT INTO products_overwritten SELECT * FROM products WHERE id=%d;", oldProductId);
-                    query+=format("DELETE FROM products WHERE id=%d;", oldProductId);
-                }
-                connection.setAutoCommit(false);
-                Statement stmt = connection.createStatement();
-                if(query.length()>0){
-                    stmt.execute(query);
-                }
-                query = format("INSERT INTO products (`machine_id`, `mail_id`) VALUES (%d, %d);",machineId, mailId);
-                stmt.executeUpdate(query,Statement.RETURN_GENERATED_KEYS);
-                ResultSet rs = stmt.getGeneratedKeys();
-                if(rs.next())
-                {
-                    productInfo.put("id",rs.getLong(1));
-                    logger.info("[PRODUCT][44] Inserted New Product MailId="+mailId+" ProductId:"+rs.getLong(1));
-                }
-                connection.commit();
-                connection.setAutoCommit(true);
-                rs.close();
-                stmt.close();
+
+        int machineId=clientInfo.getInt("machine_id");
+        long mailId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
+        long sensorId = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));
+        int sensorStatus=dataBytes[8];
+        logger.info("[PRODUCT][44] sensorId= "+sensorId+". sensorStatus="+sensorStatus+". MailId="+mailId);
+        if((sensorId == 1) && (sensorStatus == 1)) {
+            String query="";
+            String queryOldProduct=format("SELECT * FROM products WHERE machine_id=%d AND mail_id=%d;", machineId, mailId);
+            JSONArray previousProductInfo=HelperDatabase.getSelectQueryResults(connection,queryOldProduct);
+            if(previousProductInfo.length()>0){
+                long oldProductId=previousProductInfo.getJSONObject(0).getLong("id");
+                logger.info("[PRODUCT][44] Duplicate Product found. MailId="+mailId+" productId="+oldProductId);
+                query+=format("INSERT INTO products_overwritten SELECT * FROM products WHERE id=%d;", oldProductId);
+                query+=format("DELETE FROM products WHERE id=%d;", oldProductId);
             }
-            productInfo.put("mail_id",mailId);
+            connection.setAutoCommit(false);
+            Statement stmt = connection.createStatement();
+            if(query.length()>0){
+                stmt.execute(query);
+            }
+            query = format("INSERT INTO products (`machine_id`, `mail_id`) VALUES (%d, %d);",machineId, mailId);
+            stmt.executeUpdate(query,Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = stmt.getGeneratedKeys();
+            if(rs.next())
+            {
+                productInfo.put("id",rs.getLong(1));
+                logger.info("[PRODUCT][44] Inserted New Product MailId="+mailId+" ProductId:"+rs.getLong(1));
+            }
+            connection.commit();
+            connection.setAutoCommit(true);
+            rs.close();
+            stmt.close();
         }
-        catch (Exception ex){
-            logger.error("[PRODUCT][44] "+HelperCommon.getStackTraceString(ex));
-            productInfo=new JSONObject();
-        }
+        productInfo.put("mail_id",mailId);
         return productInfo;
     }
-    public static void handleMessage_46(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_46(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         JSONObject inductStates=HelperDatabase.getInductStates(connection,clientInfo.getInt("machine_id"));
         JSONObject inducts= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inducts");
