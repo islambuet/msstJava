@@ -208,8 +208,23 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperDatabase.getAlarmsActive(connection,machine_id));
                                 break;
                             }
+                            case "alarms_history": {
+                                responseData.put(requestFunctionName,HelperDatabase.getAlarmsHistory(connection,machine_id,requestFunction.getJSONObject("params")));
+                                break;
+                            }
                             case "machine_mode": {
                                 responseData.put(requestFunctionName,HelperDatabase.getMachineMode(connection,machine_id));
+                                break;
+                            }
+                            case "statistics":
+                            case "statistics_bins":
+                            case "statistics_bins_counter":
+                            case "statistics_bins_hourly":
+                            case "statistics_counter":
+                            case "statistics_hourly":
+                            case "statistics_minutely":
+                            case "statistics_oee":{
+                                responseData.put(requestFunctionName,HelperDatabase.getStatisticsData(connection,machine_id,requestFunctionName,requestFunction.getJSONObject("params")));
                                 break;
                             }
                         }
