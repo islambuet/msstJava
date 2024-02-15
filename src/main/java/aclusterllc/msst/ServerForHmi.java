@@ -298,9 +298,13 @@ public class ServerForHmi implements Runnable {
                             sendMessage(response.toString());
                             break;
                         }
+                        case "forwardSMMessage":{
+                            notifyObserversHmiMessage(jsonObject,new JSONObject());
+                            break;
+                        }
                     }
                 }
-                notifyObserversHmiMessage(jsonObject,response.getJSONObject("data"));//TODO no need for every message. optimize
+                //notifyObserversHmiMessage(jsonObject,response.getJSONObject("data"));//TODO no need for every message. optimize
             }
             catch (Exception ex){
                 logger.error(HelperCommon.getStackTraceString(ex));
