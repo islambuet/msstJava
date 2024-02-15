@@ -314,54 +314,55 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					case 22:
 						jsonInfo.put("productInfo",ClientForSMMessageHandler.handleMessage_22(connection,clientInfo,dataBytes));
 						break;
-					//				case 42:
-					//					ClientForSMMessageHandler.handleMessage_42(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 43:
-					//					ClientForSMMessageHandler.handleMessage_43(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 44:
-					//					info=ClientForSMMessageHandler.handleMessage_44(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 45:
-					//					//nothing doing. Receiving only event Id TODO For 360
-					//					break;
-					//				case 46:
-					//					ClientForSMMessageHandler.handleMessage_46(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 47:
-					//					ClientForSMMessageHandler.handleMessage_47(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 48:
-					//					ClientForSMMessageHandler.handleMessage_48(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 49:
-					//					ClientForSMMessageHandler.handleMessage_49(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 50:
-					//					//nothing doing. Receiving only estop state and location. TODO For 360
-					//					break;
-					//				case 51:
-					//					//nothing doing. Receiving only reason. TODO For 360
-					//					break;
-					//				case 52:
-					//					//nothing doing. Receiving only speed. TODO For 360
-					//					break;
-					//				case 53:
-					//					ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 54:
-					//					ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 55:
-					//					ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
-					//					break;
-					//				case 56:
-					//					ClientForSMMessageHandler.handleMessage_56(connection,clientInfo,dataBytes);
-					//					break;
-					//				case 57:
-					//					ClientForSMMessageHandler.handleMessage_57(connection,clientInfo,dataBytes);
-					//					break;
+					case 42:
+						jsonInfo.put("conveyorsStatesPrevious",ClientForSMMessageHandler.handleMessage_42(connection,clientInfo,dataBytes));
+						break;
+					case 43:
+						jsonInfo.put("conveyorStatePrevious",ClientForSMMessageHandler.handleMessage_43(connection,clientInfo,dataBytes));
+						break;
+
+	//				case 44:
+	//					info=ClientForSMMessageHandler.handleMessage_44(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 45:
+	//					//nothing doing. Receiving only event Id TODO For 360
+	//					break;
+	//				case 46:
+	//					ClientForSMMessageHandler.handleMessage_46(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 47:
+	//					ClientForSMMessageHandler.handleMessage_47(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 48:
+	//					ClientForSMMessageHandler.handleMessage_48(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 49:
+	//					ClientForSMMessageHandler.handleMessage_49(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 50:
+	//					//nothing doing. Receiving only estop state and location. TODO For 360
+	//					break;
+	//				case 51:
+	//					//nothing doing. Receiving only reason. TODO For 360
+	//					break;
+	//				case 52:
+	//					//nothing doing. Receiving only speed. TODO For 360
+	//					break;
+	//				case 53:
+	//					ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 54:
+	//					ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 55:
+	//					ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
+	//					break;
+	//				case 56:
+	//					ClientForSMMessageHandler.handleMessage_56(connection,clientInfo,dataBytes);
+	//					break;
+	//				case 57:
+	//					ClientForSMMessageHandler.handleMessage_57(connection,clientInfo,dataBytes);
+	//					break;
 					default:
 						logger.error("[MESSAGE_PROCESS][UNHANDLED] messageId: " + messageId);
 						break;

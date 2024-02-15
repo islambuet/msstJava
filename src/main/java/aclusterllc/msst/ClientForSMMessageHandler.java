@@ -374,7 +374,7 @@ public class ClientForSMMessageHandler {
         }
         return productInfo;
     }
-    public static JSONObject handleMessage_22(Connection connection, JSONObject clientInfo, byte[] dataBytes)  throws SQLException {
+    public static JSONObject handleMessage_22(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         JSONObject productInfo=new JSONObject();
         int machine_id = clientInfo.getInt("machine_id");
         long mail_id = HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
@@ -474,67 +474,60 @@ public class ClientForSMMessageHandler {
 
         return productInfo;
     }
-    /*public static void handleMessage_42(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_42(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject conveyorStates=HelperDatabase.getConveyorStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject conveyors= (JSONObject) ConfigurationHelper.dbBasicInfo.get("conveyors");
+        JSONObject conveyorsStates=HelperDatabase.getConveyorsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject conveyors= (JSONObject) HelperConfiguration.dbBasicInfo.get("conveyors");
 
         byte[] stateDataBytes = Arrays.copyOfRange(dataBytes, 4, dataBytes.length);
 
         String query="";
-        for(int i=0;i<stateDataBytes.length;i++){
-            int conveyor_id=(i+1);
-            if(conveyors.has(machineId+"_"+conveyor_id)){
-                if(conveyorStates.has(machineId+"_"+conveyor_id)){
-                    JSONObject conveyorState= (JSONObject) conveyorStates.get(machineId+"_"+conveyor_id);
-                    if(conveyorState.getInt("state")!=stateDataBytes[i]){
-                        query+=format("UPDATE conveyor_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",stateDataBytes[i],conveyorState.getLong("id"));
-                        query+= format("INSERT INTO conveyor_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,stateDataBytes[i]);
+        for(int i=0;i<stateDataBytes.length;i++) {
+            int conveyor_id = (i + 1);
+            //save only from conveyors table
+            if(conveyors.has(machineId+"_"+conveyor_id)) {
+                if (conveyorsStates.has(machineId + "_" + conveyor_id)) {
+                    JSONObject conveyorState = (JSONObject) conveyorsStates.get(machineId + "_" + conveyor_id);
+                    if (conveyorState.getInt("state") != stateDataBytes[i]) {
+                        query += format("UPDATE conveyors_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;", stateDataBytes[i], conveyorState.getLong("id"));
+                        query += format("INSERT INTO conveyors_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);", machineId, conveyor_id, stateDataBytes[i]);
                     }
-                }
-                else{
-                    query+= format("INSERT INTO conveyor_states (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,stateDataBytes[i]);
-                    query+= format("INSERT INTO conveyor_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,stateDataBytes[i]);
+                } else {
+                    query += format("INSERT INTO conveyors_states (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);", machineId, conveyor_id, stateDataBytes[i]);
+                    query += format("INSERT INTO conveyors_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);", machineId, conveyor_id, stateDataBytes[i]);
                 }
             }
         }
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+
+        HelperDatabase.runMultipleQuery(connection,query);
+        return conveyorsStates;
     }
-    public static void handleMessage_43(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_43(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject conveyorStates=HelperDatabase.getConveyorStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject conveyors= (JSONObject) ConfigurationHelper.dbBasicInfo.get("conveyors");
+        JSONObject conveyorsStates=HelperDatabase.getConveyorsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject conveyorState=new JSONObject();
+        JSONObject conveyors= (JSONObject) HelperConfiguration.dbBasicInfo.get("conveyors");
         int conveyor_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
         String query="";
         if(conveyors.has(machineId+"_"+conveyor_id)){
-            if(conveyorStates.has(machineId+"_"+conveyor_id)){
-                JSONObject conveyorState= (JSONObject) conveyorStates.get(machineId+"_"+conveyor_id);
+            if(conveyorsStates.has(machineId+"_"+conveyor_id)){
+                conveyorState= (JSONObject) conveyorsStates.get(machineId+"_"+conveyor_id);
                 if(conveyorState.getInt("state")!=state){
-                    query+=format("UPDATE conveyor_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",state,conveyorState.getLong("id"));
-                    query+= format("INSERT INTO conveyor_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
+                    query+=format("UPDATE conveyors_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",state,conveyorState.getLong("id"));
+                    query+= format("INSERT INTO conveyors_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
                 }
             }
             else{
-                query+= format("INSERT INTO conveyor_states (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
-                query+= format("INSERT INTO conveyor_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
+                query+= format("INSERT INTO conveyors_states (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
+                query+= format("INSERT INTO conveyors_states_history (`machine_id`, `conveyor_id`,`state`) VALUES (%d,%d,%d);",machineId,conveyor_id,state);
             }
         }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return conveyorState;
 
-        //System.out.println("Query: "+query);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
     }
-    public static JSONObject handleMessage_44(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static JSONObject handleMessage_44(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         JSONObject productInfo=new JSONObject();
         try {
             int machineId=clientInfo.getInt("machine_id");
