@@ -153,6 +153,14 @@ public class HelperDatabase {
         String query = String.format("SELECT * FROM bins_states WHERE machine_id=%d", machineId);
         return getSelectQueryResults(connection,query,new String[] { "machine_id", "bin_id"});
     }
+    public static JSONObject getConveyorsStates(Connection connection,int machineId) throws SQLException {
+        String query = String.format("SELECT * FROM conveyors_states WHERE machine_id=%d", machineId);
+        return getSelectQueryResults(connection,query,new String[] { "machine_id", "conveyor_id"});
+    }
+    public static JSONObject getDevicesStates(Connection connection,int machineId) throws SQLException {
+        String query = String.format("SELECT * FROM devices_states WHERE machine_id=%d", machineId);
+        return getSelectQueryResults(connection,query,new String[] { "machine_id", "device_id"});
+    }
     public static JSONObject getInputsStates(Connection connection,int machineId) throws SQLException {
         String query = String.format("SELECT * FROM inputs_states WHERE machine_id=%d", machineId);
         return getSelectQueryResults(connection,query,new String[] { "machine_id", "input_id"});

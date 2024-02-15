@@ -135,6 +135,7 @@ public class ClientForSMMessageHandler {
         String query="";
         for(int i=0;i<bits.length;i++){
             int bin_id=(i+1);
+            //save only from bins
             if(bins.has(machineId+"_"+bin_id)){
                 if(binsStates.has(machineId+"_"+bin_id)){
                     JSONObject binStates= (JSONObject) binsStates.get(machineId+"_"+bin_id);
@@ -185,6 +186,7 @@ public class ClientForSMMessageHandler {
             columName="mode";
         }
         String query="";
+        //save only from bins
         if(bins.has(machineId+"_"+bin_id)){
             if(binsStates.has(machineId+"_"+bin_id)){
                 binStates= (JSONObject) binsStates.get(machineId+"_"+bin_id);
@@ -208,59 +210,52 @@ public class ClientForSMMessageHandler {
         HelperDatabase.runMultipleQuery(connection,query);
         return binStates;
     }
-    /*public static void handleMessage_14(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_14(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject devices= (JSONObject) ConfigurationHelper.dbBasicInfo.get("devices");
-        JSONObject deviceStates=HelperDatabase.getDeviceStates(connection,machineId);
+        JSONObject devicesStates=HelperDatabase.getDevicesStates(connection,machineId);
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
         String query="";
         for(int i=0;i<bits.length;i++){
-            if(deviceStates.has(machineId+"_"+(i+1))){
-                JSONObject deviceState= (JSONObject) deviceStates.get(machineId+"_"+(i+1));
+            //save all devices
+            if(devicesStates.has(machineId+"_"+(i+1))){
+                JSONObject deviceState= (JSONObject) devicesStates.get(machineId+"_"+(i+1));
                 if(deviceState.getInt("state")!=bits[i]){
-                    query+= format("UPDATE device_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],deviceState.getLong("id"));
-                    query+= format("INSERT INTO device_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+                    query+= format("UPDATE devices_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],deviceState.getLong("id"));
+                    query+= format("INSERT INTO devices_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
                 }
             }
             else{
-                query+= format("INSERT INTO device_states (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
-                query+= format("INSERT INTO device_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+                query+= format("INSERT INTO devices_states (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+                query+= format("INSERT INTO devices_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
             }
         }
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
-
+        HelperDatabase.runMultipleQuery(connection,query);
+        return devicesStates;
     }
-    public static void handleMessage_15(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_15(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject deviceStates=HelperDatabase.getDeviceStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject devicesStates=HelperDatabase.getDevicesStates(connection,machineId);
         int device_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
+        JSONObject deviceState=new JSONObject();
 
         String query="";
-        if(deviceStates.has(machineId+"_"+device_id)){
-            JSONObject deviceState= (JSONObject) deviceStates.get(machineId+"_"+device_id);
+        if(devicesStates.has(machineId+"_"+device_id)){
+            deviceState= (JSONObject) devicesStates.get(machineId+"_"+device_id);
             if(deviceState.getInt("state")!=state){
-                query+=format("UPDATE device_states SET `state`='%d', `updated_at`=now()  WHERE `id`=%d;",state,deviceState.getLong("id"));
-                query+=format("INSERT INTO device_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
+                query+=format("UPDATE devices_states SET `state`='%d', `updated_at`=now()  WHERE `id`=%d;",state,deviceState.getLong("id"));
+                query+=format("INSERT INTO devices_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
             }
         }
         else{
-            query+= format("INSERT INTO device_states (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
-            query+= format("INSERT INTO device_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
+            query+= format("INSERT INTO devices_states (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
+            query+= format("INSERT INTO devices_states_history (`machine_id`, `device_id`,`state`) VALUES (%d,%d,%d);",machineId,device_id,state);
         }
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return deviceState;
+
     }
-    public static JSONObject handleMessage_20(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static JSONObject handleMessage_20(Connection connection, JSONObject clientInfo, byte[] dataBytes){
 
         JSONObject productInfo=new JSONObject();
         try {
