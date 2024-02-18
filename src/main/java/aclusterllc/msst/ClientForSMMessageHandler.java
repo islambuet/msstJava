@@ -435,7 +435,7 @@ public class ClientForSMMessageHandler {
             }
         }
         if (destBin != null && destFinalBin != null) {
-            List<Integer> possibleReasons = new ArrayList<>(Arrays.asList(0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 17, 18, 21));
+            List<Integer> possibleReasons = new ArrayList<>(Arrays.asList(0, 1 ,2, 3, 4, 5, 6, 7, 8, 9, 10,11, 12,13, 14,15, 16, 17, 18,19,20, 21));
             if (possibleReasons.contains(reason)) {
                 String scColumn = "sc" + reason;
                 String recircUpdate = "";
@@ -617,7 +617,7 @@ public class ClientForSMMessageHandler {
         HelperDatabase.runMultipleQuery(connection,query);
         return inductState;
     }
-    /*public static void handleMessage_48(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static void handleMessage_48(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
         int laneId = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         List<Integer> inducts =new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
@@ -628,18 +628,13 @@ public class ClientForSMMessageHandler {
             query+= format("UPDATE statistics_minutely SET %s=%s+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;",columnName,columnName,machineId);
             query+= format("UPDATE statistics_hourly SET %s=%s+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;",columnName,columnName,machineId);
             query+= format("UPDATE statistics_counter SET %s=%s+1 WHERE machine_id=%d ORDER BY id DESC LIMIT 1;",columnName,columnName,machineId);
-            try {
-                HelperDatabase.runMultipleQuery(connection,query);
-            }
-            catch (SQLException e) {
-                logger.error(HelperCommon.getStackTraceString(e));
-            }
+            HelperDatabase.runMultipleQuery(connection,query);
         }
         else {
-            logger.error("Invalid LaneId: "+laneId);
+            logger.error("[48] Invalid LaneId: "+laneId);
         }
     }
-    public static void handleMessage_49(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_49(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         int motorCount = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         for(int i=0;i<motorCount;i++){
