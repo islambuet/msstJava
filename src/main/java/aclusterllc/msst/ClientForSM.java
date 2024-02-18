@@ -350,9 +350,10 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					case 53:
 						jsonInfo.put("outputsStatesPrevious",ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes));
 						break;
-	//				case 54:
-	//					ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
-	//					break;
+					case 54:
+						jsonInfo.put("paramValueUpdated", ClientForSMMessageHandler.handleMessage_54(connection, clientInfo, dataBytes));
+						ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
+						break;
 	//				case 55:
 	//					ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
 	//					break;
@@ -421,7 +422,7 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 			//MSG_ID = 130
 		}
 		notifyObserversSMMessage(jsonMessage, jsonInfo);
-		if(messageId>19)System.out.println(messageId+" "+jsonInfo);
+		if(messageId>53)System.out.println(messageId+" "+jsonInfo);
 
 	}
 	@Override

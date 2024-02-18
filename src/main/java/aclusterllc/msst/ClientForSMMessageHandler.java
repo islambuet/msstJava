@@ -660,20 +660,15 @@ public class ClientForSMMessageHandler {
         HelperDatabase.runMultipleQuery(connection,query);
         return outputStates;
     }
-    /*public static void handleMessage_54(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static int handleMessage_54(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machine_id=clientInfo.getInt("machine_id");
         int param_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         int value = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));
+        String updateQuery = format("UPDATE parameters SET value=%d,`updated_at`=NOW() WHERE machine_id=%d AND param_id=%d AND value!=%d;",value,machine_id,param_id,value);
+        return HelperDatabase.runUpdateQuery(connection,updateQuery);
 
-        String query = format("UPDATE parameters SET value=%d,`updated_at`=NOW() WHERE machine_id=%d AND param_id=%d;",value,machine_id,param_id);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
     }
-    public static void handleMessage_55(Connection connection, ApeClient apeClient, byte[] dataBytes){
+    /*public static void handleMessage_55(Connection connection, ApeClient apeClient, byte[] dataBytes){
         int machine_id=apeClient.clientInfo.getInt("machine_id");
         JSONObject parameterValues=HelperDatabase.getParameterValues(connection,machine_id);
         for(String key:parameterValues.keySet()){
