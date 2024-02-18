@@ -643,12 +643,12 @@ public class ClientForSMMessageHandler {
     }
     public static JSONObject handleMessage_53(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject outputStates=HelperDatabase.getOutputStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject outputsStates=HelperDatabase.getOutputsStates(connection,clientInfo.getInt("machine_id"));
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
         String query="";
         for(int i=0;i<bits.length;i++){
-            if(outputStates.has(machineId+"_"+(i+1))){
-                JSONObject outputState= (JSONObject) outputStates.get(machineId+"_"+(i+1));
+            if(outputsStates.has(machineId+"_"+(i+1))){
+                JSONObject outputState= (JSONObject) outputsStates.get(machineId+"_"+(i+1));
                 if(outputState.getInt("state")!=bits[i]){
                     query+= format("UPDATE outputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],outputState.getLong("id"));
                 }
@@ -658,7 +658,7 @@ public class ClientForSMMessageHandler {
             }
         }
         HelperDatabase.runMultipleQuery(connection,query);
-        return outputStates;
+        return outputsStates;
     }
     public static int handleMessage_54(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machine_id=clientInfo.getInt("machine_id");

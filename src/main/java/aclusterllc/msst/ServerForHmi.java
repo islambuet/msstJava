@@ -212,8 +212,32 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperDatabase.getAlarmsHistory(connection,machine_id,requestFunction.getJSONObject("params")));
                                 break;
                             }
+                            case "bins_states": {
+                                responseData.put(requestFunctionName,HelperDatabase.getBinsStates(connection,machine_id));
+                                break;
+                            }
+                            case "conveyors_states": {
+                                responseData.put(requestFunctionName,HelperDatabase.getConveyorsStates(connection,machine_id));
+                                break;
+                            }
+                            case "counters_current_value": {
+                                responseData.put(requestFunctionName,HelperConfiguration.countersCurrentValue);
+                                break;
+                            }
                             case "machine_mode": {
                                 responseData.put(requestFunctionName,HelperDatabase.getMachineMode(connection,machine_id));
+                                break;
+                            }
+                            case "motors_current_speed": {
+                                responseData.put(requestFunctionName,HelperConfiguration.motorsCurrentSpeed);
+                                break;
+                            }
+                            case "outputs_states": {
+                                responseData.put(requestFunctionName,HelperDatabase.getOutputsStates(connection,machine_id));
+                                break;
+                            }
+                            case "parameters_values": {
+                                responseData.put(requestFunctionName,HelperDatabase.getParametersValues(connection,machine_id));
                                 break;
                             }
                             case "statistics":
