@@ -177,6 +177,10 @@ public class HelperDatabase {
         }
         return 0;
     }
+    public static JSONObject getOutputStates(Connection connection,int machineId) throws SQLException{
+        String query = String.format("SELECT * FROM outputs_states WHERE machine_id=%d", machineId);
+        return getSelectQueryResults(connection,query,new String[] { "machine_id", "output_id"});
+    }
     public static JSONObject getStatisticsData(Connection connection,int machineId,String table,JSONObject params) throws SQLException {
         JSONObject resultJsonObject = new JSONObject();
         String query = "SELECT *,UNIX_TIMESTAMP(created_at) AS created_at_timestamp FROM ";

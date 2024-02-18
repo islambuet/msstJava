@@ -634,30 +634,33 @@ public class ClientForSMMessageHandler {
             logger.error("[48] Invalid LaneId: "+laneId);
         }
     }
-    /*public static void handleMessage_49(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static void handleMessage_49(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         int motorCount = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         for(int i=0;i<motorCount;i++){
-            ConfigurationHelper.motorsCurrentSpeed.put(machineId+"_"+(i+1),(int)  HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4+i*2, 6+i*2)));
+            HelperConfiguration.motorsCurrentSpeed.put(machineId+"_"+(i+1),(int)  HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4+i*2, 6+i*2)));
         }
     }
-    public static void handleMessage_53(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_53(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
+        JSONObject outputStates=HelperDatabase.getOutputStates(connection,clientInfo.getInt("machine_id"));
         byte []bits=HelperCommon.bitsFromBytes(dataBytes,4);
-        String query = "INSERT INTO output_states (`machine_id`, `output_id`, `state`,`updated_at`) VALUES ";
-        List<String> valuesList = new ArrayList<>();
+        String query="";
         for(int i=0;i<bits.length;i++){
-            valuesList.add(format("(%d, %d, %d,NOW())", machineId, i+1, bits[i]));
+            if(outputStates.has(machineId+"_"+(i+1))){
+                JSONObject outputState= (JSONObject) outputStates.get(machineId+"_"+(i+1));
+                if(outputState.getInt("state")!=bits[i]){
+                    query+= format("UPDATE outputs_states SET `state`=%d,`updated_at`=now() WHERE id=%d;",bits[i],outputState.getLong("id"));
+                }
+            }
+            else{
+                query+= format("INSERT INTO outputs_states (`machine_id`, `output_id`,`state`) VALUES (%d,%d,%d);",machineId,(i+1),bits[i]);
+            }
         }
-        query+=(String.join(", ", valuesList)+" ON DUPLICATE KEY UPDATE state=VALUES(state),updated_at=VALUES(updated_at)");
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return outputStates;
     }
-    public static void handleMessage_54(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_54(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machine_id=clientInfo.getInt("machine_id");
         int param_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         int value = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4, 8));

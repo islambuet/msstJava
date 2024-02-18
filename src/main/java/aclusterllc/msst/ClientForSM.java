@@ -335,21 +335,21 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 					case 48:
 						ClientForSMMessageHandler.handleMessage_48(connection,clientInfo,dataBytes);
 						break;
-	//				case 49:
-	//					ClientForSMMessageHandler.handleMessage_49(connection,clientInfo,dataBytes);
-	//					break;
-	//				case 50:
-	//					//nothing doing. Receiving only estop state and location. TODO For 360
-	//					break;
-	//				case 51:
-	//					//nothing doing. Receiving only reason. TODO For 360
-	//					break;
-	//				case 52:
-	//					//nothing doing. Receiving only speed. TODO For 360
-	//					break;
-	//				case 53:
-	//					ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes);
-	//					break;
+					case 49:
+						ClientForSMMessageHandler.handleMessage_49(connection,clientInfo,dataBytes);
+						break;
+					case 50:
+						//nothing doing. Receiving only estop state and location. TODO For 360
+						break;
+					case 51:
+						//nothing doing. Receiving only reason. TODO For 360
+						break;
+					case 52:
+						//nothing doing. Receiving only speed. TODO For 360
+						break;
+					case 53:
+						jsonInfo.put("outputsStatesPrevious",ClientForSMMessageHandler.handleMessage_53(connection,clientInfo,dataBytes));
+						break;
 	//				case 54:
 	//					ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
 	//					break;
