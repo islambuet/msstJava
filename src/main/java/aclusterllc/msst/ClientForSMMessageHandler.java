@@ -566,11 +566,10 @@ public class ClientForSMMessageHandler {
         productInfo.put("mail_id",mailId);
         return productInfo;
     }
-    /*public static void handleMessage_46(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_46(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject inductStates=HelperDatabase.getInductStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject inducts= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inducts");
-
+        JSONObject inductsStates=HelperDatabase.getInductsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject inducts= (JSONObject) HelperConfiguration.dbBasicInfo.get("inducts");
 
         byte[] stateDataBytes = Arrays.copyOfRange(dataBytes, 4, dataBytes.length);
 
@@ -578,56 +577,47 @@ public class ClientForSMMessageHandler {
         for(int i=0;i<stateDataBytes.length;i++){
             int induct_id=(i+1);
             if(inducts.has(machineId+"_"+induct_id)){
-                if(inductStates.has(machineId+"_"+induct_id)){
-                    JSONObject inductState= (JSONObject) inductStates.get(machineId+"_"+induct_id);
+                if(inductsStates.has(machineId+"_"+induct_id)){
+                    JSONObject inductState= (JSONObject) inductsStates.get(machineId+"_"+induct_id);
                     if(inductState.getInt("state")!=stateDataBytes[i]){
-                        query+=format("UPDATE induct_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",stateDataBytes[i],inductState.getLong("id"));
-                        query+= format("INSERT INTO induct_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
+                        query+=format("UPDATE inducts_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",stateDataBytes[i],inductState.getLong("id"));
+                        query+= format("INSERT INTO inducts_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
                     }
                 }
                 else{
-                    query+= format("INSERT INTO induct_states (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
-                    query+= format("INSERT INTO induct_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
+                    query+= format("INSERT INTO inducts_states (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
+                    query+= format("INSERT INTO inducts_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,stateDataBytes[i]);
                 }
             }
         }
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
+        return inductsStates;
     }
-    public static void handleMessage_47(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static JSONObject handleMessage_47(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machineId=clientInfo.getInt("machine_id");
-        JSONObject inductStates=HelperDatabase.getInductStates(connection,clientInfo.getInt("machine_id"));
-        JSONObject inducts= (JSONObject) ConfigurationHelper.dbBasicInfo.get("inducts");
+        JSONObject inductsStates=HelperDatabase.getInductsStates(connection,clientInfo.getInt("machine_id"));
+        JSONObject inductState=new JSONObject();
+        JSONObject inducts= (JSONObject) HelperConfiguration.dbBasicInfo.get("inducts");
         int induct_id = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 2));
         int state=dataBytes[2];
         String query="";
-        if(inducts.has(machineId+"_"+induct_id)){
-            if(inductStates.has(machineId+"_"+induct_id)){
-                JSONObject inductState= (JSONObject) inductStates.get(machineId+"_"+induct_id);
+        //if(inducts.has(machineId+"_"+induct_id)){
+            if(inductsStates.has(machineId+"_"+induct_id)){
+                inductState= (JSONObject) inductsStates.get(machineId+"_"+induct_id);
                 if(inductState.getInt("state")!=state){
-                    query+=format("UPDATE induct_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",state,inductState.getLong("id"));
-                    query+= format("INSERT INTO induct_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
+                    query+=format("UPDATE inducts_states SET `state`='%s', `updated_at`=now()  WHERE `id`=%d;",state,inductState.getLong("id"));
+                    query+= format("INSERT INTO inducts_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
                 }
             }
             else{
-                query+= format("INSERT INTO induct_states (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
-                query+= format("INSERT INTO induct_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
+                query+= format("INSERT INTO inducts_states (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
+                query+= format("INSERT INTO inducts_states_history (`machine_id`, `induct_id`,`state`) VALUES (%d,%d,%d);",machineId,induct_id,state);
             }
-        }
-
-        //System.out.println("Query: "+query);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        //}
+        HelperDatabase.runMultipleQuery(connection,query);
+        return inductState;
     }
-    public static void handleMessage_48(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    /*public static void handleMessage_48(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machineId=clientInfo.getInt("machine_id");
         int laneId = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         List<Integer> inducts =new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
