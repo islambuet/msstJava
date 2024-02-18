@@ -354,15 +354,15 @@ public class ClientForSM implements Runnable, ObserverHmiMessage {
 						jsonInfo.put("paramValueUpdated", ClientForSMMessageHandler.handleMessage_54(connection, clientInfo, dataBytes));
 						ClientForSMMessageHandler.handleMessage_54(connection,clientInfo,dataBytes);
 						break;
-	//				case 55:
-	//					ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
-	//					break;
-	//				case 56:
-	//					ClientForSMMessageHandler.handleMessage_56(connection,clientInfo,dataBytes);
-	//					break;
-	//				case 57:
-	//					ClientForSMMessageHandler.handleMessage_57(connection,clientInfo,dataBytes);
-	//					break;
+					case 55:
+						ClientForSMMessageHandler.handleMessage_55(connection,this,dataBytes);
+						break;
+					case 56:
+						ClientForSMMessageHandler.handleMessage_56(connection,clientInfo,dataBytes);
+						break;
+					case 57:
+						ClientForSMMessageHandler.handleMessage_57(connection,clientInfo,dataBytes);
+						break;
 					default:
 						logger.error("[MESSAGE_PROCESS][UNHANDLED] messageId: " + messageId);
 						break;

@@ -668,11 +668,11 @@ public class ClientForSMMessageHandler {
         return HelperDatabase.runUpdateQuery(connection,updateQuery);
 
     }
-    /*public static void handleMessage_55(Connection connection, ApeClient apeClient, byte[] dataBytes){
-        int machine_id=apeClient.clientInfo.getInt("machine_id");
-        JSONObject parameterValues=HelperDatabase.getParameterValues(connection,machine_id);
-        for(String key:parameterValues.keySet()){
-            JSONObject row=parameterValues.getJSONObject(key);
+    public static void handleMessage_55(Connection connection, ClientForSM clientForSM, byte[] dataBytes) throws SQLException {
+        int machine_id=clientForSM.clientInfo.getInt("machine_id");
+        JSONObject parametersValues=HelperDatabase.getParametersValues(connection,machine_id);
+        for(String key:parametersValues.keySet()){
+            JSONObject row=parametersValues.getJSONObject(key);
             int paramId = row.getInt("param_id");
             int value = row.getInt("value");
             //messageId==115
@@ -681,17 +681,17 @@ public class ClientForSMMessageHandler {
                     (byte) (paramId >> 24),(byte) (paramId >> 16),(byte) (paramId >> 8),(byte) (paramId),
                     (byte) (value >> 24),(byte) (value >> 16),(byte) (value >> 8),(byte) (value)
             };
-            apeClient.sendBytes(messageBytes);
+            clientForSM.sendBytes(messageBytes);
         }
     }
     public static void handleMessage_56(Connection connection, JSONObject clientInfo, byte[] dataBytes){
         int machine_id=clientInfo.getInt("machine_id");
         int counterCount = (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4));
         for(int i=0;i<counterCount;i++){
-            ConfigurationHelper.countersCurrentValue.put(machine_id+"_"+(i+1),(int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4+i*4, 8+i*4)));
+            HelperConfiguration.countersCurrentValue.put(machine_id+"_"+(i+1),(int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 4+i*4, 8+i*4)));
         }
     }
-    public static void handleMessage_57(Connection connection, JSONObject clientInfo, byte[] dataBytes){
+    public static void handleMessage_57(Connection connection, JSONObject clientInfo, byte[] dataBytes) throws SQLException {
         int machine_id=clientInfo.getInt("machine_id");
         String query = "UPDATE statistics_oee SET";
         query+=String.format(" current_state= %d,", (int) HelperCommon.bytesToLong(Arrays.copyOfRange(dataBytes, 0, 4)));
@@ -712,13 +712,8 @@ public class ClientForSMMessageHandler {
         query+=String.format(" last_record= %d,", dataBytes[60]);
         query+=" updated_at=NOW()";
         query+=String.format(" WHERE machine_id=%d ORDER BY id DESC LIMIT 1;", machine_id);
-        try {
-            HelperDatabase.runMultipleQuery(connection,query);
-        }
-        catch (SQLException e) {
-            logger.error(HelperCommon.getStackTraceString(e));
-        }
+        HelperDatabase.runMultipleQuery(connection,query);
 
-    }*/
+    }
 
 }
