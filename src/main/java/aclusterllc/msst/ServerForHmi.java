@@ -240,6 +240,36 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperDatabase.getParametersValues(connection,machine_id));
                                 break;
                             }
+                            case "parameters_values_import": {
+                                JSONArray csvData=requestFunction.getJSONObject("params").getJSONArray("csvData");
+                                JSONObject oldParamData=HelperDatabase.getParametersValues(connection,machine_id);
+                                int totalRowChanged=0;
+                                for(int tempI=0;tempI<csvData.length();tempI++){
+                                    JSONObject row=csvData.getJSONObject(tempI);
+                                    int temp_machine_id=row.getInt("machine_id");
+                                    int temp_param_id=row.getInt("param_id");
+                                    int temp_value=row.getInt("value");
+                                    if(oldParamData.has(temp_machine_id+"_"+temp_param_id)){
+                                        if(oldParamData.getJSONObject(temp_machine_id+"_"+temp_param_id).getInt("value")!= temp_value){
+                                            totalRowChanged++;
+                                            JSONObject jsonObjectForForwardSMMessage=new JSONObject();
+                                            jsonObjectForForwardSMMessage.put("request","forwardSMMessage");
+                                            JSONObject paramsForForwardSMMessage=new JSONObject();
+                                            paramsForForwardSMMessage.put("message_id",115);
+                                            paramsForForwardSMMessage.put("machine_id",temp_machine_id);
+                                            paramsForForwardSMMessage.put("value",temp_value);
+                                            paramsForForwardSMMessage.put("param_id",temp_param_id);
+                                            jsonObjectForForwardSMMessage.put("params",paramsForForwardSMMessage);
+                                            jsonObjectForForwardSMMessage.put("requestData",new JSONArray());
+                                            notifyObserversHmiMessage(jsonObjectForForwardSMMessage,new JSONObject());
+                                        }
+                                    }
+                                }
+                                JSONObject resultJsonObject = new JSONObject();
+                                resultJsonObject.put("totalRowChanged",totalRowChanged);
+                                responseData.put(requestFunctionName,resultJsonObject);
+                                break;
+                            }
                             case "statistics":
                             case "statistics_bins":
                             case "statistics_bins_counter":
