@@ -224,6 +224,21 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperConfiguration.countersCurrentValue);
                                 break;
                             }
+                            case "devices_states": {
+                                JSONObject devicesStates=HelperDatabase.getDevicesStates(connection,machine_id);
+                                //for main plc manually set status
+                                if(devicesStates.has(machine_id+"_2")){
+                                    JSONObject plc= (JSONObject) devicesStates.get(machine_id+"_2");
+                                    plc.put("state",HelperConfiguration.machinesConnectionStatus.get(machine_id+""));
+                                    devicesStates.put(machine_id+"_2",plc);
+                                }
+                                responseData.put(requestFunctionName,devicesStates);
+                                break;
+                            }
+                            case "inputs_states": {
+                                responseData.put(requestFunctionName,HelperDatabase.getInputsStates(connection,machine_id));
+                                break;
+                            }
                             case "machine_mode": {
                                 responseData.put(requestFunctionName,HelperDatabase.getMachineMode(connection,machine_id));
                                 break;
