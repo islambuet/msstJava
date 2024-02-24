@@ -212,6 +212,10 @@ public class ServerForHmi implements Runnable {
                                 responseData.put(requestFunctionName,HelperDatabase.getAlarmsHistory(connection,machine_id,requestFunction.getJSONObject("params")));
                                 break;
                             }
+                            case "alarms_hit_list": {
+                                responseData.put(requestFunctionName,HelperDatabase.getAlarmsHitList(connection,machine_id,requestFunction.getJSONObject("params")));
+                                break;
+                            }
                             case "bins_states": {
                                 responseData.put(requestFunctionName,HelperDatabase.getBinsStates(connection,machine_id));
                                 break;
@@ -222,6 +226,10 @@ public class ServerForHmi implements Runnable {
                             }
                             case "counters_current_value": {
                                 responseData.put(requestFunctionName,HelperConfiguration.countersCurrentValue);
+                                break;
+                            }
+                            case "devices_disconnected_counter": {
+                                responseData.put(requestFunctionName,HelperDatabase.getDevicesDisconnectedCounter(connection,machine_id));
                                 break;
                             }
                             case "devices_states": {

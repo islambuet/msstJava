@@ -149,6 +149,25 @@ public class HelperDatabase {
         return resultJsonObject;
 
     }
+    public static JSONObject getAlarmsHitList(Connection connection,int machineId,JSONObject params) throws SQLException {
+        JSONObject resultJsonObject = new JSONObject();
+        String query ="SELECT *,COUNT(id) AS no_of_occurrences," +
+                "MAX(UNIX_TIMESTAMP(date_active)) AS date_active_timestamp," +
+                "MAX(UNIX_TIMESTAMP(date_inactive)) AS date_inactive_timestamp " +
+                "FROM alarms_history";
+
+        query+=String.format(" WHERE machine_id=%d",machineId);
+        if(params.has("to_timestamp")){
+            query+=String.format(" AND UNIX_TIMESTAMP(date_active)<=%d",params.getInt("to_timestamp"));
+        }
+        if(params.has("from_timestamp")){
+            query+=String.format(" AND UNIX_TIMESTAMP(date_active)>=%d",params.getInt("from_timestamp"));
+        }
+        query+=" GROUP BY machine_id,alarm_id,alarm_type;";
+        resultJsonObject.put("params", params);
+        resultJsonObject.put("records", getSelectQueryResults(connection,query,new String[] { "machine_id", "alarm_id", "alarm_type"}));
+        return resultJsonObject;
+    }
     public static JSONObject getBinsStates(Connection connection,int machineId) throws SQLException {
         String query = String.format("SELECT * FROM bins_states WHERE machine_id=%d", machineId);
         return getSelectQueryResults(connection,query,new String[] { "machine_id", "bin_id"});
@@ -156,6 +175,19 @@ public class HelperDatabase {
     public static JSONObject getConveyorsStates(Connection connection,int machineId) throws SQLException {
         String query = String.format("SELECT * FROM conveyors_states WHERE machine_id=%d", machineId);
         return getSelectQueryResults(connection,query,new String[] { "machine_id", "conveyor_id"});
+    }
+    public static int getDevicesDisconnectedCounter(Connection connection,int machineId) throws SQLException {
+        int totalDisconnected=0;
+        String query = String.format("SELECT COUNT(id) AS totalDisconnected FROM devices_states WHERE machine_id=%d AND state=0 AND device_id IN (SELECT device_id FROM devices WHERE machine_id=%d AND gui_id!=0 AND device_id!=1 AND device_id!=2) LIMIT 1", machineId, machineId);
+        JSONArray queryResult=getSelectQueryResults(connection,query);
+        if(queryResult.length()>0){
+            totalDisconnected= queryResult.getJSONObject(0).getInt("totalDisconnected");
+        }
+        //for main plc
+        if(HelperConfiguration.machinesConnectionStatus.get(machineId+"")==0){
+            totalDisconnected++;
+        }
+        return totalDisconnected;
     }
     public static JSONObject getDevicesStates(Connection connection,int machineId) throws SQLException {
         String query = String.format("SELECT * FROM devices_states WHERE machine_id=%d", machineId);
