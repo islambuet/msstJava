@@ -178,7 +178,7 @@ public class HelperDatabase {
     }
     public static int getDevicesDisconnectedCounter(Connection connection,int machineId) throws SQLException {
         int totalDisconnected=0;
-        String query = String.format("SELECT COUNT(id) AS totalDisconnected FROM devices_states WHERE machine_id=%d AND state=0 AND device_id IN (SELECT device_id FROM devices WHERE machine_id=%d AND gui_id!=0 AND device_id!=1 AND device_id!=2) LIMIT 1", machineId, machineId);
+        String query = String.format("SELECT COUNT(id) AS totalDisconnected FROM devices_states WHERE machine_id=%d AND state=0 AND device_id IN (SELECT device_id FROM devices WHERE machine_id=%d AND gui_id!=\"\" AND device_id!=1 AND device_id!=2) LIMIT 1", machineId, machineId);
         JSONArray queryResult=getSelectQueryResults(connection,query);
         if(queryResult.length()>0){
             totalDisconnected= queryResult.getJSONObject(0).getInt("totalDisconnected");
